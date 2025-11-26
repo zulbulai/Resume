@@ -1,67 +1,65 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Zulbulai — Professional Invoice</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Zulbulai — Invoice (Fixed Layout)</title>
 
-<!-- html2canvas + jsPDF -->
+<!-- libs -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
   :root{
-    --accent:#f6a800;
-    --navy:#0f2b58;
+    --accent:#f6a800;  /* orange */
+    --navy:#131844;
     --muted:#6b7280;
-    --bg:#f3f6fb;
-    --card:#ffffff;
+    --bg:#f4f6fb;
+    --paper:#ffffff;
   }
-  body{font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); margin:0; padding:18px; color:#0b2340}
-  .wrap{max-width:1024px;margin:18px auto;display:grid;grid-template-columns:360px 1fr;gap:16px}
-  .panel{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 8px 26px rgba(8,20,50,0.06)}
-  h3{margin:0 0 10px 0;color:var(--navy)}
-  label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
-  input[type=text], input[type=email], input[type=tel], select, textarea{width:100%;padding:8px;border:1px solid #e6e9f0;border-radius:6px;box-sizing:border-box;font-size:14px}
-  textarea{min-height:70px}
+  body{font-family:Inter, Arial, sans-serif; background:var(--bg); margin:0; padding:18px; color:#111}
+  .container{max-width:1100px;margin:12px auto;display:grid;grid-template-columns:360px 1fr;gap:14px}
+  .card{background:var(--paper);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(3,10,34,0.06)}
+  h3{margin:0 0 8px 0}
+  label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
+  input[type=text], input[type=email], input[type=tel], select, textarea{width:100%;padding:8px;border:1px solid #e6e9f0;border-radius:6px;box-sizing:border-box}
+  textarea{min-height:70px; resize:vertical}
   .btn{background:var(--navy);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
   .btn.secondary{background:var(--accent);color:#111}
   .muted{color:var(--muted);font-size:13px}
-  /* Invoice sheet */
-  .sheet{background:#fff;padding:20px;border-radius:6px;box-shadow:0 6px 18px rgba(8,20,50,0.04)}
-  .sheet .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-  .brand{max-width:220px}
-  .brand .logo{max-width:180px;display:block}
-  .accent-line{height:10px;background:var(--accent);width:120px;border-radius:6px;margin-top:10px}
-  .big-title{font-size:34px;color:var(--navy);font-weight:700;margin:18px 0 6px}
-  .two-col{display:flex;justify-content:space-between;gap:12px}
-  .customer-box{width:58%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fafcff}
-  .details-box{width:40%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fff}
-  .details-row{font-size:14px;margin:6px 0;color:#111}
-  table.items{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
-  table.items th, table.items td{border:1px solid #e6e9f0;padding:10px;text-align:left}
-  table.items th{background:var(--navy);color:#fff;font-weight:600;font-size:12px}
-  .sums{display:flex;justify-content:flex-end;margin-top:12px}
-  .sums table{border-collapse:collapse;width:320px}
-  .sums td{padding:10px;border:1px solid #eef2fb;background:#fff;font-size:14px}
-  .sums tr.total td{font-weight:700;background:#f8fafc}
-  .bottom-row{display:flex;justify-content:space-between;align-items:flex-start;margin-top:18px;gap:12px}
-  .payment-box{width:55%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fafcff}
-  .qr-img{max-width:120px;border:1px solid #eee;padding:6px;background:#fff}
-  .signature-right{width:40%;text-align:right}
-  .signature-img{max-width:200px}
-  footer.note{border-top:3px solid var(--navy);padding-top:10px;margin-top:18px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-  .small{font-size:13px;color:var(--muted)}
-  @media(max-width:900px){.wrap{grid-template-columns:1fr}.two-col{flex-direction:column}.customer-box,.details-box{width:100%}.sums{justify-content:flex-start}.signature-right{text-align:left}}
+  .invoice-sheet{background:var(--paper);padding:22px;border-radius:6px; box-shadow:0 8px 28px rgba(3,10,34,0.08)}
+  .inv-head{display:flex;justify-content:space-between;align-items:flex-start; gap:12px}
+  .logo{max-width:160px;max-height:72px;object-fit:contain}
+  .accent-bar{height:12px;background:var(--accent);width:100%;margin-top:8px;border-radius:4px}
+  .title{font-size:36px;color:var(--navy);font-weight:700;margin:18px 0}
+  .row-flex{display:flex;gap:12px}
+  .inv-left{width:58%}
+  .inv-right{width:42%}
+  .section-title{font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px}
+  .field-muted{font-size:13px;color:var(--muted);margin-bottom:4px}
+  table.items{width:100%;border-collapse:collapse;margin-top:12px}
+  table.items th, table.items td{border:1px solid #e6e9f0;padding:10px;font-size:13px;vertical-align:middle}
+  table.items th{background:var(--navy);color:#fff;font-weight:700;font-size:12px}
+  .totals-wrap{display:flex;justify-content:flex-end;margin-top:12px}
+  .totals-box{width:320px;border:1px solid #e6e9f0;padding:10px;border-radius:6px;background:#fff}
+  .totals-row{display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eef2ff}
+  .totals-row.total{font-weight:800;background:#f8fafc;border-top:2px solid #e6e9f0}
+  .payment-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
+  .qr{max-width:140px;border:1px solid #eee;padding:6px;background:#fff}
+  .signature-area{display:flex;justify-content:flex-end;align-items:flex-end;margin-top:20px;gap:12px}
+  .sig-img{max-width:220px;display:block}
+  footer.note{border-top:3px solid var(--navy);padding-top:10px;margin-top:18px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+  .customer-block{background:#fbfcff;padding:10px;border-radius:6px;border:1px solid #eef2ff;margin-bottom:6px}
+  @media(max-width:900px){.container{grid-template-columns:1fr}.inv-left,.inv-right{width:100%}.totals-wrap{justify-content:flex-start}}
 </style>
 </head>
 <body>
 
-<div class="wrap">
+<div class="container">
   <!-- LEFT: minimal form -->
-  <div class="panel">
-    <h3>Quick Invoice — Fill minimal fields</h3>
-    <div class="small">Company prefilled: Zulbulai — kanpur उत्तर प्रदेश 208004 — zulbulai@gmail.com</div>
+  <div class="card">
+    <h3>Quick Invoice — Fill only customer & plan</h3>
+    <div class="muted" style="margin-bottom:8px">Auto-filled: Zulbulai — kanpur उत्तर प्रदेश 208004 — zulbulai@gmail.com</div>
 
     <label>Customer Name</label>
     <input id="cust_name" type="text" placeholder="Customer name">
@@ -72,7 +70,10 @@
     <label>Customer Phone</label>
     <input id="cust_phone" type="tel" placeholder="10-digit phone">
 
-    <label>Subscription Plan</label>
+    <label>Customer Address</label>
+    <textarea id="cust_addr" placeholder="Customer full address (line1, city, state, PIN)"></textarea>
+
+    <label>Subscription plan</label>
     <select id="plan_select">
       <option value="0">Select plan — amount auto-set</option>
       <option value="499">Basic — ₹499</option>
@@ -85,69 +86,77 @@
     <input id="invoice_no" type="text" value="">
 
     <label style="margin-top:10px">Invoice Date</label>
-    <input id="invoice_date" type="date" value="">
+    <input id="invoice_date" type="date">
 
-    <label style="margin-top:10px">GitHub raw base (optional — folder containing logo.png, signature.png, qr.png)</label>
-    <input id="github_raw" type="text" placeholder="https://raw.githubusercontent.com/username/repo/branch/path/">
+    <label style="margin-top:10px">(Optional) GitHub raw base URL for images</label>
+    <input id="github_raw" type="text" placeholder="https://raw.githubusercontent.com/username/repo/branch/path/to/folder/">
 
     <label style="margin-top:10px">(Fallback) Upload logo / signature / qr</label>
     <input id="logo_file" type="file" accept="image/*" style="margin-top:6px">
     <input id="signature_file" type="file" accept="image/*" style="margin-top:6px">
     <input id="qr_file" type="file" accept="image/*" style="margin-top:6px">
 
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button id="refresh_btn" class="btn">Refresh Preview</button>
+    <div style="margin-top:12px; display:flex; gap:8px;">
+      <button id="preview_btn" class="btn">Refresh Preview</button>
       <button id="download_btn" class="btn secondary" style="margin-left:auto">Download PDF</button>
     </div>
 
-    <div style="margin-top:10px" class="small">
+    <div style="margin-top:12px; font-size:13px;" class="muted">
       Payment: UPI — <strong>Canvapro@upi</strong><br>
       Phone: <strong>6387617678</strong>
     </div>
+
+    <div style="margin-top:8px" class="small-muted">Notes: Images tried from GitHub raw → relative → uploaded files.</div>
   </div>
 
-  <!-- RIGHT: professional invoice preview -->
-  <div class="sheet" id="invoice_area">
-    <div class="top">
-      <div class="brand">
+  <!-- RIGHT: Invoice preview -->
+  <div class="invoice-sheet" id="invoice_area" role="document" aria-label="Invoice preview">
+    <div class="inv-head">
+      <div style="max-width:60%">
         <img id="logo_img" class="logo" src="" alt="logo" style="display:none">
-        <div class="accent-line"></div>
+        <div class="accent-bar"></div>
       </div>
       <div style="text-align:right">
-        <div class="small">Invoice</div>
+        <div style="font-size:13px;color:var(--muted)">Invoice</div>
         <div id="display_invoice_no" style="font-weight:700;font-size:18px">INV-0001</div>
-        <div id="display_date" class="small"></div>
+        <div id="display_date" class="muted"></div>
       </div>
     </div>
 
-    <div class="big-title">INVOICE</div>
+    <div class="title">INVOICE</div>
 
-    <div class="two-col">
-      <div class="customer-box">
-        <div style="font-weight:700;color:var(--navy)">INVOICE TO</div>
-        <div style="margin-top:8px"><div style="font-size:16px;font-weight:600" id="p_cust_name">Customer Name</div></div>
-        <div class="small" id="p_cust_email">customer@example.com</div>
-        <div class="small" id="p_cust_phone">+91 9876543210</div>
-        <div style="margin-top:10px" class="small">Company: <strong>Zulbulai</strong><br>kanpur उत्तर प्रदेश 208004</div>
+    <!-- customer + invoice details -->
+    <div class="row-flex" style="gap:22px;">
+      <div class="inv-left">
+        <div class="section-title">INVOICE TO</div>
+        <div class="customer-block">
+          <div style="font-weight:700;font-size:15px" id="p_cust_name">Customer Name</div>
+          <div class="field-muted" id="p_cust_email">email@example.com</div>
+          <div class="field-muted" id="p_cust_phone">Phone</div>
+          <div style="margin-top:6px" class="field-muted" id="p_cust_addr">Customer address line</div>
+        </div>
+
+        <div style="margin-top:8px" class="field-muted">Company: <strong>Zulbulai</strong><br>kanpur उत्तर प्रदेश 208004</div>
       </div>
 
-      <div class="details-box">
-        <div style="font-weight:700;color:var(--navy)">INVOICE DETAILS</div>
-        <div class="details-row">Invoice No: <strong id="p_invoice_no">INV-0001</strong></div>
-        <div class="details-row">Date: <strong id="p_invoice_date">--/--/----</strong></div>
-        <div class="details-row">Email: <strong id="p_company_email">zulbulai@gmail.com</strong></div>
+      <div class="inv-right">
+        <div class="section-title">INVOICE DETAILS</div>
+        <div class="field-muted">Invoice No: <strong id="p_invoice_no">INV-0001</strong></div>
+        <div class="field-muted">Date: <strong id="p_invoice_date">--/--/----</strong></div>
+        <div style="margin-top:10px" class="field-muted"><strong>Prepared by:</strong> Zulbulai</div>
+        <div style="margin-top:8px" class="field-muted">Email: zulbulai@gmail.com</div>
       </div>
     </div>
 
     <!-- items -->
-    <table class="items" aria-hidden="false">
+    <table class="items" aria-hidden="false" style="margin-top:16px">
       <thead>
         <tr>
           <th style="width:8%">SL NO</th>
-          <th>ITEM DESCRIPTION</th>
+          <th>DESCRIPTION</th>
           <th style="width:12%">QTY</th>
-          <th style="width:16%">UNIT PRICE</th>
-          <th style="width:16%">TOTAL</th>
+          <th style="width:16%">UNIT PRICE (₹)</th>
+          <th style="width:16%">TOTAL (₹)</th>
         </tr>
       </thead>
       <tbody id="p_items">
@@ -161,30 +170,35 @@
       </tbody>
     </table>
 
-    <!-- sums placed below items -->
-    <div class="sums" aria-hidden="false">
-      <table>
-        <tr><td>Sub Total</td><td id="p_subtotal">0.00</td></tr>
-        <tr><td>Tax (0%)</td><td id="p_tax">0.00</td></tr>
-        <tr class="total"><td>Total</td><td id="p_total">0.00</td></tr>
-      </table>
+    <!-- totals moved below items, right aligned -->
+    <div class="totals-wrap">
+      <div class="totals-box" role="note" aria-label="Totals">
+        <div class="totals-row"><div>Sub Total</div><div id="p_subtotal">0.00</div></div>
+        <div class="totals-row"><div>Tax (0%)</div><div id="p_tax">0.00</div></div>
+        <div class="totals-row total"><div>Total</div><div id="p_total">0.00</div></div>
+      </div>
     </div>
 
-    <!-- bottom: payment left, signature right -->
-    <div class="bottom-row">
-      <div class="payment-box">
+    <!-- payment + qr + signature on right -->
+    <div class="payment-row">
+      <div>
         <div style="font-weight:700">Payment (UPI)</div>
-        <div class="small" style="margin-top:6px">UPI ID: <strong>Canvapro@upi</strong></div>
-        <div class="small">Phone: <strong>6387617678</strong></div>
-        <div style="margin-top:8px">
-          <img id="qr_preview" class="qr-img" src="" alt="QR" style="display:none">
-        </div>
+        <div class="field-muted" style="margin-top:6px">UPI ID: <strong>Canvapro@upi</strong></div>
+        <div class="field-muted">Phone: <strong>6387617678</strong></div>
       </div>
 
-      <div class="signature-right">
-        <img id="sig_preview" class="signature-img" src="" alt="signature" style="display:none"><br>
-        <div style="margin-top:8px;font-weight:700;color:var(--accent)">Authorized Signatory</div>
-        <div class="small">Zulbulai</div>
+      <div style="text-align:right; width:240px;">
+        <img id="qr_preview" class="qr" src="" alt="QR" style="display:none">
+        <div style="margin-top:6px" class="field-muted">Scan to Pay</div>
+
+        <!-- signature placed under totals at right -->
+        <div class="signature-area" style="margin-top:12px;">
+          <div style="text-align:right;">
+            <img id="sig_preview" class="sig-img" src="" alt="signature" style="display:none">
+            <div style="font-weight:700;color:var(--accent);margin-top:6px" id="sig_name">Authorized Signatory</div>
+            <div style="font-size:12px;color:var(--muted)">Zulbulai</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -192,23 +206,17 @@
       <div>Terms: Payment due on receipt. For queries contact 6387617678</div>
       <div style="font-weight:700">Zulbulai</div>
     </footer>
+
   </div>
 
 </div>
 
 <script>
-/* Professional invoice single-file:
-   - auto-loads images from GitHub raw base, relative path, or uploaded files
-   - only fields to fill: customer name/email/phone + plan
-   - totals placed below items, signature right side
-   - invoice number auto-increment (localStorage)
-*/
-
+/* Auto image logic, invoice increment, layout fixes as requested */
 (function(){
-  // CONFIG: set your GitHub raw folder URL here OR paste it in input
-  const GITHUB_RAW_BASE_DEFAULT = ''; // e.g. 'https://raw.githubusercontent.com/username/repo/branch/path/'
+  const GITHUB_RAW_BASE_DEFAULT = ''; // set if you want default github raw base
 
-  // DOM elements
+  // DOM
   const githubRawInput = document.getElementById('github_raw');
   const logoFileInput = document.getElementById('logo_file');
   const signatureFileInput = document.getElementById('signature_file');
@@ -221,6 +229,7 @@
   const custName = document.getElementById('cust_name');
   const custEmail = document.getElementById('cust_email');
   const custPhone = document.getElementById('cust_phone');
+  const custAddr = document.getElementById('cust_addr');
   const planSelect = document.getElementById('plan_select');
   const invoiceNoInput = document.getElementById('invoice_no');
   const invoiceDateInput = document.getElementById('invoice_date');
@@ -228,6 +237,7 @@
   const p_cust_name = document.getElementById('p_cust_name');
   const p_cust_email = document.getElementById('p_cust_email');
   const p_cust_phone = document.getElementById('p_cust_phone');
+  const p_cust_addr = document.getElementById('p_cust_addr');
   const p_invoice_no = document.getElementById('p_invoice_no');
   const p_invoice_date = document.getElementById('p_invoice_date');
   const p_price = document.getElementById('p_price');
@@ -238,10 +248,10 @@
   const display_invoice_no = document.getElementById('display_invoice_no');
   const display_date = document.getElementById('display_date');
 
-  const refreshBtn = document.getElementById('refresh_btn');
+  const previewBtn = document.getElementById('preview_btn');
   const downloadBtn = document.getElementById('download_btn');
 
-  // company constants
+  // defaults
   const COMPANY = {
     name: 'Zulbulai',
     addr: 'kanpur उत्तर प्रदेश 208004',
@@ -250,167 +260,164 @@
     upi: 'Canvapro@upi'
   };
 
-  // helper: build candidate URLs
+  // image loader helper
+  function tryLoadImageSequential(imgElement, candidates) {
+    return new Promise((resolve) => {
+      let idx = 0;
+      function tryNext(){
+        if (idx >= candidates.length) { imgElement.style.display='none'; imgElement.src=''; resolve(false); return; }
+        const src = candidates[idx++]; if(!src){ tryNext(); return; }
+        let done = false;
+        function success(){ if(done) return; done=true; imgElement.style.display='block'; resolve(true); }
+        function failure(){ if(done) return; done=true; tryNext(); }
+        imgElement.onload = success;
+        imgElement.onerror = failure;
+        imgElement.src = src;
+        setTimeout(function(){ if(done) return; done=true; tryNext(); }, 5000);
+      }
+      tryNext();
+    });
+  }
+
   function buildCandidates(base, filename){
     const list = [];
-    if(base){
-      const b = base.endsWith('/') ? base : base + '/';
-      list.push(b + filename);
-    }
+    if (base) { if(!base.endsWith('/')) base = base + '/'; list.push(base + filename); }
     list.push('./' + filename);
     list.push(filename);
     return list;
   }
 
-  // try sequential load of image src list
-  function tryLoadImageSequential(imgEl, list){
-    return new Promise(resolve=>{
-      let i=0;
-      function next(){
-        if(i>=list.length){ imgEl.style.display='none'; imgEl.src=''; resolve(false); return; }
-        const src = list[i++];
-        if(!src){ next(); return; }
-        let done=false;
-        imgEl.onload = function(){ if(done) return; done=true; imgEl.style.display='block'; resolve(true); };
-        imgEl.onerror = function(){ if(done) return; done=true; next(); };
-        imgEl.src = src;
-        setTimeout(function(){ if(done) return; done=true; next(); },5000);
-      }
-      next();
+  function fileInputToDataUrl(fileInput){
+    return new Promise((resolve)=> {
+      const f = fileInput.files && fileInput.files[0];
+      if(!f){ resolve(null); return; }
+      const rdr = new FileReader();
+      rdr.onload = function(ev){ resolve(ev.target.result); };
+      rdr.onerror = function(){ resolve(null); };
+      rdr.readAsDataURL(f);
     });
   }
 
-  function fileToDataUrl(inp){
-    return new Promise(resolve=>{
-      const f = inp.files && inp.files[0];
-      if(!f) return resolve(null);
-      const r = new FileReader();
-      r.onload = e => resolve(e.target.result);
-      r.onerror = () => resolve(null);
-      r.readAsDataURL(f);
-    });
-  }
-
-  // auto invoice no using localStorage
   function initInvoiceNo(){
-    const key = 'zulbulai_inv_counter_v2';
-    let c = Number(localStorage.getItem(key) || 0);
-    c = c + 1;
-    localStorage.setItem(key, String(c));
-    const inv = 'ZUL-' + new Date().getFullYear().toString().slice(2) + '-' + String(c).padStart(4,'0');
+    const key = 'zul_invoice_counter_v2';
+    let counter = Number(localStorage.getItem(key) || 0);
+    counter = counter + 1;
+    localStorage.setItem(key, String(counter));
+    const inv = 'ZUL-' + String(new Date().getFullYear()).slice(2) + '-' + String(counter).padStart(4,'0');
     invoiceNoInput.value = inv;
   }
 
   if(!invoiceDateInput.value) invoiceDateInput.value = new Date().toISOString().slice(0,10);
-  initInvoiceNo();
 
-  // attempt images load
-  async function attemptImages(){
-    const base = (githubRawInput.value || '').trim() || GITHUB_RAW_BASE_DEFAULT;
-    const logoCandidates = buildCandidates(base,'logo.png');
-    const sigCandidates = buildCandidates(base,'signature.png');
-    const qrCandidates = buildCandidates(base,'qr.png');
+  async function attemptAutoLoadImages(){
+    const baseFromInput = (githubRawInput.value || '').trim() || GITHUB_RAW_BASE_DEFAULT;
+    const candidatesLogo = buildCandidates(baseFromInput, 'logo.png');
+    const candidatesSig = buildCandidates(baseFromInput, 'signature.png');
+    const candidatesQr = buildCandidates(baseFromInput, 'qr.png');
 
-    let logoLoaded = await tryLoadImageSequential(logoImg, logoCandidates);
-    let sigLoaded = await tryLoadImageSequential(sigPreview, sigCandidates);
-    let qrLoaded = await tryLoadImageSequential(qrPreview, qrCandidates);
+    let logoLoaded = await tryLoadImageSequential(logoImg, candidatesLogo);
+    let sigLoaded = await tryLoadImageSequential(sigPreview, candidatesSig);
+    let qrLoaded = await tryLoadImageSequential(qrPreview, candidatesQr);
 
-    // fallback to uploaded files
+    // fallback to uploaded files if provided
     if(!logoLoaded && logoFileInput.files.length){
-      const d = await fileToDataUrl(logoFileInput); if(d){ logoImg.src=d; logoImg.style.display='block'; logoLoaded=true; }
+      const d = await fileInputToDataUrl(logoFileInput);
+      if(d){ logoImg.src = d; logoImg.style.display='block'; logoLoaded = true; }
     }
     if(!sigLoaded && signatureFileInput.files.length){
-      const d = await fileToDataUrl(signatureFileInput); if(d){ sigPreview.src=d; sigPreview.style.display='block'; sigLoaded=true; }
+      const d = await fileInputToDataUrl(signatureFileInput);
+      if(d){ sigPreview.src = d; sigPreview.style.display='block'; sigLoaded = true; }
     }
     if(!qrLoaded && qrFileInput.files.length){
-      const d = await fileToDataUrl(qrFileInput); if(d){ qrPreview.src=d; qrPreview.style.display='block'; qrLoaded=true; }
+      const d = await fileInputToDataUrl(qrFileInput);
+      if(d){ qrPreview.src = d; qrPreview.style.display='block'; qrLoaded = true; }
     }
+
     if(!logoLoaded) { logoImg.style.display='none'; }
     if(!sigLoaded) { sigPreview.style.display='none'; }
     if(!qrLoaded) { qrPreview.style.display='none'; }
   }
 
-  // wire file inputs to preview
-  logoFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(logoFileInput); if(d){ logoImg.src=d; logoImg.style.display='block'; }});
-  signatureFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(signatureFileInput); if(d){ sigPreview.src=d; sigPreview.style.display='block'; }});
-  qrFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(qrFileInput); if(d){ qrPreview.src=d; qrPreview.style.display='block'; }});
-
-  // refresh preview
+  // preview & amounts
   function money(v){ return Number(v||0).toFixed(2); }
+
   function refreshPreview(){
     p_cust_name.textContent = custName.value || 'Customer Name';
-    p_cust_email.textContent = custEmail.value || COMPANY.email;
-    p_cust_phone.textContent = custPhone.value || COMPANY.phone;
+    p_cust_email.textContent = custEmail.value || '';
+    p_cust_phone.textContent = custPhone.value || '';
+    p_cust_addr.textContent = custAddr.value || '';
     p_invoice_no.textContent = invoiceNoInput.value || '';
     display_invoice_no.textContent = invoiceNoInput.value || '';
     p_invoice_date.textContent = invoiceDateInput.value || '';
-    display_date.textContent = invoiceDateInput.value || '';
 
     const amt = Number(planSelect.value || 0);
     p_price.textContent = money(amt);
     p_line_total.textContent = money(amt);
     p_subtotal.textContent = money(amt);
-    const tax = 0;
-    p_tax.textContent = money(amt * tax/100);
-    p_total.textContent = money(amt + (amt*tax/100));
+    const tax = 0; // keep 0 or change if needed
+    p_tax.textContent = money(amt * tax / 100);
+    p_total.textContent = money(amt + amt * tax / 100);
   }
 
   // events
-  [custName,custEmail,custPhone,planSelect,invoiceNoInput,invoiceDateInput,githubRawInput].forEach(el=>el.addEventListener('input', refreshPreview));
-  refresh_btn = document.getElementById('refresh_btn');
-  refresh_btn.addEventListener('click', async function(e){ e.preventDefault(); await attemptImages(); refreshPreview(); alert('Preview refreshed.'); });
-
-  // initial
-  attemptImages();
+  initInvoiceNo();
+  attemptAutoLoadImages();
   refreshPreview();
 
-  // generate PDF
+  [custName, custEmail, custPhone, custAddr, planSelect, invoiceNoInput, invoiceDateInput, githubRawInput].forEach(el=>{
+    el.addEventListener('input', refreshPreview);
+  });
+
+  logoFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(logoFileInput); if(d){ logoImg.src = d; logoImg.style.display='block'; } });
+  signatureFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(signatureFileInput); if(d){ sigPreview.src = d; sigPreview.style.display='block'; } });
+  qrFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(qrFileInput); if(d){ qrPreview.src = d; qrPreview.style.display='block'; } });
+
+  previewBtn.addEventListener('click', async function(e){ e.preventDefault(); await attemptAutoLoadImages(); refreshPreview(); alert('Preview refreshed. Images attempted from GitHub/raw, relative, then uploaded files.'); });
+
+  // PDF generation: A4, image high quality
   downloadBtn.addEventListener('click', async function(e){
     e.preventDefault();
     if(!custName.value.trim()){ alert('Please enter customer name'); return; }
-    if(!planSelect.value || Number(planSelect.value)===0){ if(!confirm('Plan not selected or amount 0. Continue?')) return; }
+    if(!planSelect.value || Number(planSelect.value) === 0){ if(!confirm('Plan not selected or amount 0. Continue?')) return; }
 
-    // ensure images loaded
-    await attemptImages();
+    await attemptAutoLoadImages();
     refreshPreview();
 
     downloadBtn.disabled = true; downloadBtn.textContent = 'Preparing PDF...';
 
     try {
       const invoiceEl = document.getElementById('invoice_area');
-      // small wait for image rendering
-      await new Promise(r=>setTimeout(r,300));
-      const scale = 2;
-      const opts = { scale: scale, useCORS:true, allowTaint:true, backgroundColor:'#ffffff' };
-      const canvas = await html2canvas(invoiceEl, opts);
-      const img = canvas.toDataURL('image/jpeg',0.95);
+      // small wait to allow images to load
+      await new Promise(resolve => setTimeout(resolve, 350));
+
+      const scale = 2; // increase for higher quality
+      const canvas = await html2canvas(invoiceEl, { scale: scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit:'mm', format:'a4' });
+      const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
 
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const margin = 10;
-      const availW = pageW - margin*2;
-      const availH = pageH - margin*2;
-
+      const availW = pageW - margin * 2;
+      const availH = pageH - margin * 2;
       const pxToMm = 0.264583 * (1/scale);
       const imgW = canvas.width * pxToMm;
       const imgH = canvas.height * pxToMm;
 
       let renderW = imgW, renderH = imgH;
-      if(renderW > availW){ const r = availW / renderW; renderW = availW; renderH = renderH * r; }
-      if(renderH > availH){ const r = availH / renderH; renderH = availH; renderW = renderW * r; }
-
-      const x = (pageW - renderW)/2;
-      const y = margin + ((availH - renderH)/2);
-
-      pdf.addImage(img, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
+      if (renderW > availW) { const r = availW / renderW; renderW = availW; renderH = renderH * r; }
+      if (renderH > availH) { const r = availH / renderH; renderH = availH; renderW = renderW * r; }
+      const x = (pageW - renderW) / 2;
+      const y = margin + ((availH - renderH) / 2);
+      pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
 
       const fname = (invoiceNoInput.value || 'invoice') + '-' + (new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
       pdf.save(fname);
-    } catch(err){
-      console.error(err);
-      alert('PDF generation failed: ' + (err.message || err));
+    } catch (err) {
+      console.error('PDF error', err);
+      alert('PDF generation failed: ' + (err && err.message ? err.message : String(err)));
     } finally {
       downloadBtn.disabled = false; downloadBtn.textContent = 'Download PDF';
     }
