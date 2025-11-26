@@ -1,50 +1,67 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Zulbulai — Invoice (Auto images)</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Zulbulai — Professional Invoice</title>
 
-<!-- libs -->
+<!-- html2canvas + jsPDF -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <style>
-  :root{--accent:#f6a800; --navy:#131844; --muted:#6b7280; --bg:#f4f6fb}
-  body{font-family:Arial, sans-serif; background:var(--bg); margin:0; padding:18px; color:#111}
-  .container{max-width:1100px;margin:12px auto;display:grid;grid-template-columns:360px 1fr;gap:14px}
-  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 6px 20px rgba(3,10,34,0.06)}
-  h3{margin:0 0 8px 0}
-  label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
-  input[type=text], input[type=email], input[type=tel], select{width:100%;padding:8px;border:1px solid #e6e9f0;border-radius:6px;box-sizing:border-box}
+  :root{
+    --accent:#f6a800;
+    --navy:#0f2b58;
+    --muted:#6b7280;
+    --bg:#f3f6fb;
+    --card:#ffffff;
+  }
+  body{font-family: 'Segoe UI', Roboto, Arial, sans-serif; background:var(--bg); margin:0; padding:18px; color:#0b2340}
+  .wrap{max-width:1024px;margin:18px auto;display:grid;grid-template-columns:360px 1fr;gap:16px}
+  .panel{background:var(--card);padding:14px;border-radius:10px;box-shadow:0 8px 26px rgba(8,20,50,0.06)}
+  h3{margin:0 0 10px 0;color:var(--navy)}
+  label{display:block;font-size:13px;color:var(--muted);margin-top:8px}
+  input[type=text], input[type=email], input[type=tel], select, textarea{width:100%;padding:8px;border:1px solid #e6e9f0;border-radius:6px;box-sizing:border-box;font-size:14px}
+  textarea{min-height:70px}
   .btn{background:var(--navy);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
   .btn.secondary{background:var(--accent);color:#111}
   .muted{color:var(--muted);font-size:13px}
-  .invoice-sheet{background:#fff;padding:22px;border-radius:6px}
-  .inv-head{display:flex;justify-content:space-between;align-items:flex-start}
-  .logo{max-width:140px;max-height:70px;object-fit:contain}
-  .accent-bar{height:10px;background:var(--accent);width:100%;margin-top:8px;border-radius:4px}
-  .title{font-size:34px;color:var(--navy);font-weight:700;margin:18px 0}
-  table.items{width:100%;border-collapse:collapse;margin-top:12px}
-  table.items th, table.items td{border:1px solid #e6e9f0;padding:10px;font-size:13px}
-  table.items th{background:var(--navy);color:#fff;font-weight:700;font-size:12px}
-  .right-sum{float:right;width:240px;margin-top:12px}
-  .sum-row{display:flex;justify-content:space-between;padding:8px 10px;border:1px solid #e6e9f0;margin-bottom:8px;background:#fff}
-  .payment-box{display:flex;gap:12px;align-items:center;margin-top:14px}
-  .qr{max-width:120px;border:1px solid #eee;padding:6px;background:#fff}
-  .signature{max-width:200px; display:block}
+  /* Invoice sheet */
+  .sheet{background:#fff;padding:20px;border-radius:6px;box-shadow:0 6px 18px rgba(8,20,50,0.04)}
+  .sheet .top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+  .brand{max-width:220px}
+  .brand .logo{max-width:180px;display:block}
+  .accent-line{height:10px;background:var(--accent);width:120px;border-radius:6px;margin-top:10px}
+  .big-title{font-size:34px;color:var(--navy);font-weight:700;margin:18px 0 6px}
+  .two-col{display:flex;justify-content:space-between;gap:12px}
+  .customer-box{width:58%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fafcff}
+  .details-box{width:40%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fff}
+  .details-row{font-size:14px;margin:6px 0;color:#111}
+  table.items{width:100%;border-collapse:collapse;margin-top:16px;font-size:14px}
+  table.items th, table.items td{border:1px solid #e6e9f0;padding:10px;text-align:left}
+  table.items th{background:var(--navy);color:#fff;font-weight:600;font-size:12px}
+  .sums{display:flex;justify-content:flex-end;margin-top:12px}
+  .sums table{border-collapse:collapse;width:320px}
+  .sums td{padding:10px;border:1px solid #eef2fb;background:#fff;font-size:14px}
+  .sums tr.total td{font-weight:700;background:#f8fafc}
+  .bottom-row{display:flex;justify-content:space-between;align-items:flex-start;margin-top:18px;gap:12px}
+  .payment-box{width:55%;padding:12px;border-radius:6px;border:1px solid #eef2fb;background:#fafcff}
+  .qr-img{max-width:120px;border:1px solid #eee;padding:6px;background:#fff}
+  .signature-right{width:40%;text-align:right}
+  .signature-img{max-width:200px}
   footer.note{border-top:3px solid var(--navy);padding-top:10px;margin-top:18px;font-size:13px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-  .small-muted{font-size:12px;color:var(--muted)}
-  @media(max-width:900px){.container{grid-template-columns:1fr;}.right-sum{float:none;width:100%}}
+  .small{font-size:13px;color:var(--muted)}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}.two-col{flex-direction:column}.customer-box,.details-box{width:100%}.sums{justify-content:flex-start}.signature-right{text-align:left}}
 </style>
 </head>
 <body>
 
-<div class="container">
+<div class="wrap">
   <!-- LEFT: minimal form -->
-  <div class="card">
-    <h3>Quick Invoice — Fill only customer & plan</h3>
-    <div class="small-muted">Auto-filled: Zulbulai — kanpur उत्तर प्रदेश 208004 — zulbulai@gmail.com</div>
+  <div class="panel">
+    <h3>Quick Invoice — Fill minimal fields</h3>
+    <div class="small">Company prefilled: Zulbulai — kanpur उत्तर प्रदेश 208004 — zulbulai@gmail.com</div>
 
     <label>Customer Name</label>
     <input id="cust_name" type="text" placeholder="Customer name">
@@ -55,7 +72,7 @@
     <label>Customer Phone</label>
     <input id="cust_phone" type="tel" placeholder="10-digit phone">
 
-    <label>Subscription plan</label>
+    <label>Subscription Plan</label>
     <select id="plan_select">
       <option value="0">Select plan — amount auto-set</option>
       <option value="499">Basic — ₹499</option>
@@ -68,94 +85,107 @@
     <input id="invoice_no" type="text" value="">
 
     <label style="margin-top:10px">Invoice Date</label>
-    <input id="invoice_date" type="date">
+    <input id="invoice_date" type="date" value="">
 
-    <label style="margin-top:10px">(Optional) GitHub raw base URL for images</label>
-    <input id="github_raw" type="text" placeholder="https://raw.githubusercontent.com/username/repo/branch/path/to/folder/">
+    <label style="margin-top:10px">GitHub raw base (optional — folder containing logo.png, signature.png, qr.png)</label>
+    <input id="github_raw" type="text" placeholder="https://raw.githubusercontent.com/username/repo/branch/path/">
 
     <label style="margin-top:10px">(Fallback) Upload logo / signature / qr</label>
     <input id="logo_file" type="file" accept="image/*" style="margin-top:6px">
     <input id="signature_file" type="file" accept="image/*" style="margin-top:6px">
     <input id="qr_file" type="file" accept="image/*" style="margin-top:6px">
 
-    <div style="margin-top:12px; display:flex; gap:8px;">
-      <button id="preview_btn" class="btn">Refresh Preview</button>
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button id="refresh_btn" class="btn">Refresh Preview</button>
       <button id="download_btn" class="btn secondary" style="margin-left:auto">Download PDF</button>
     </div>
 
-    <div style="margin-top:10px; font-size:13px;" class="muted">
+    <div style="margin-top:10px" class="small">
       Payment: UPI — <strong>Canvapro@upi</strong><br>
       Phone: <strong>6387617678</strong>
     </div>
-
-    <div style="margin-top:8px" class="small-muted">Notes: Images will be tried from GitHub raw base (if set), then relative path (./logo.png etc.), then uploaded files.</div>
   </div>
 
-  <!-- RIGHT: Invoice preview -->
-  <div class="invoice-sheet" id="invoice_area">
-    <div class="inv-head">
-      <div style="max-width:60%">
+  <!-- RIGHT: professional invoice preview -->
+  <div class="sheet" id="invoice_area">
+    <div class="top">
+      <div class="brand">
         <img id="logo_img" class="logo" src="" alt="logo" style="display:none">
-        <div class="accent-bar"></div>
+        <div class="accent-line"></div>
       </div>
       <div style="text-align:right">
-        <div style="font-size:14px;color:var(--muted)">Invoice</div>
+        <div class="small">Invoice</div>
         <div id="display_invoice_no" style="font-weight:700;font-size:18px">INV-0001</div>
-        <div id="display_date" class="muted"></div>
+        <div id="display_date" class="small"></div>
       </div>
     </div>
 
-    <div class="title">INVOICE</div>
+    <div class="big-title">INVOICE</div>
 
-    <div style="display:flex;justify-content:space-between;gap:12px;">
-      <div style="width:55%">
-        <div style="font-weight:700">INVOICE TO</div>
-        <div style="margin-top:8px"><strong id="p_cust_name">Customer Name</strong></div>
-        <div id="p_cust_phone" class="muted"></div>
-        <div id="p_cust_email" class="muted"></div>
-        <div style="margin-top:10px" class="muted">Company: <strong>Zulbulai</strong><br>kanpur उत्तर प्रदेश 208004</div>
+    <div class="two-col">
+      <div class="customer-box">
+        <div style="font-weight:700;color:var(--navy)">INVOICE TO</div>
+        <div style="margin-top:8px"><div style="font-size:16px;font-weight:600" id="p_cust_name">Customer Name</div></div>
+        <div class="small" id="p_cust_email">customer@example.com</div>
+        <div class="small" id="p_cust_phone">+91 9876543210</div>
+        <div style="margin-top:10px" class="small">Company: <strong>Zulbulai</strong><br>kanpur उत्तर प्रदेश 208004</div>
       </div>
 
-      <div style="width:40%">
-        <div style="font-weight:700">INVOICE DETAILS</div>
-        <div style="margin-top:8px" class="muted">Invoice No: <span id="p_invoice_no">INV-0001</span></div>
-        <div class="muted">Date: <span id="p_invoice_date">--/--/----</span></div>
-
-        <div class="right-sum" id="sums">
-          <div class="sum-row"><div>Sub Total</div><div id="p_subtotal">0.00</div></div>
-          <div class="sum-row"><div>Tax (0%)</div><div id="p_tax">0.00</div></div>
-          <div class="sum-row" style="background:#f8fafc"><div><strong>Total</strong></div><div><strong id="p_total">0.00</strong></div></div>
-        </div>
+      <div class="details-box">
+        <div style="font-weight:700;color:var(--navy)">INVOICE DETAILS</div>
+        <div class="details-row">Invoice No: <strong id="p_invoice_no">INV-0001</strong></div>
+        <div class="details-row">Date: <strong id="p_invoice_date">--/--/----</strong></div>
+        <div class="details-row">Email: <strong id="p_company_email">zulbulai@gmail.com</strong></div>
       </div>
     </div>
 
-    <table class="items" aria-hidden="false" style="margin-top:18px">
-      <thead><tr><th style="width:8%">SL NO</th><th>DESCRIPTION</th><th style="width:18%">QTY</th><th style="width:18%">PRICE</th><th style="width:18%">TOTAL</th></tr></thead>
+    <!-- items -->
+    <table class="items" aria-hidden="false">
+      <thead>
+        <tr>
+          <th style="width:8%">SL NO</th>
+          <th>ITEM DESCRIPTION</th>
+          <th style="width:12%">QTY</th>
+          <th style="width:16%">UNIT PRICE</th>
+          <th style="width:16%">TOTAL</th>
+        </tr>
+      </thead>
       <tbody id="p_items">
-        <tr><td>1</td><td>Subscription Plan</td><td>1</td><td id="p_price">0.00</td><td id="p_line_total">0.00</td></tr>
+        <tr>
+          <td>1</td>
+          <td>Subscription Plan</td>
+          <td>1</td>
+          <td id="p_price">0.00</td>
+          <td id="p_line_total">0.00</td>
+        </tr>
       </tbody>
     </table>
 
-    <div class="payment-box">
-      <div>
+    <!-- sums placed below items -->
+    <div class="sums" aria-hidden="false">
+      <table>
+        <tr><td>Sub Total</td><td id="p_subtotal">0.00</td></tr>
+        <tr><td>Tax (0%)</td><td id="p_tax">0.00</td></tr>
+        <tr class="total"><td>Total</td><td id="p_total">0.00</td></tr>
+      </table>
+    </div>
+
+    <!-- bottom: payment left, signature right -->
+    <div class="bottom-row">
+      <div class="payment-box">
         <div style="font-weight:700">Payment (UPI)</div>
-        <div class="muted" style="margin-top:6px">UPI ID: <strong>Canvapro@upi</strong></div>
-        <div class="muted">Phone: <strong>6387617678</strong></div>
+        <div class="small" style="margin-top:6px">UPI ID: <strong>Canvapro@upi</strong></div>
+        <div class="small">Phone: <strong>6387617678</strong></div>
+        <div style="margin-top:8px">
+          <img id="qr_preview" class="qr-img" src="" alt="QR" style="display:none">
+        </div>
       </div>
-      <div style="margin-left:auto; text-align:center;">
-        <img id="qr_preview" class="qr" src="" alt="QR" style="display:none">
-        <div class="muted" style="margin-top:6px">Scan to Pay</div>
+
+      <div class="signature-right">
+        <img id="sig_preview" class="signature-img" src="" alt="signature" style="display:none"><br>
+        <div style="margin-top:8px;font-weight:700;color:var(--accent)">Authorized Signatory</div>
+        <div class="small">Zulbulai</div>
       </div>
-    </div>
-
-    <div style="margin-top:16px; display:flex; justify-content:space-between; align-items:center;">
-      <div class="muted">Email: zulbulai@gmail.com</div>
-      <div style="font-weight:700;color:var(--accent)">THANKS FOR YOUR BUSINESS</div>
-    </div>
-
-    <div style="margin-top:18px; text-align:right;">
-      <img id="sig_preview" class="signature" src="" alt="signature" style="display:none">
-      <div style="font-weight:700;color:var(--accent)" id="sig_name">Authorized Signatory</div>
     </div>
 
     <footer class="note">
@@ -167,20 +197,18 @@
 </div>
 
 <script>
-/*
-  Behavior:
-  - Tries to load images in this order:
-    1) If user provided GitHub raw base URL in input, tries base + logo.png / signature.png / qr.png
-    2) Then tries relative path './logo.png' etc.
-    3) Then uses uploaded files (file inputs) if provided.
-  - Auto-increments invoice number using localStorage for simplicity.
+/* Professional invoice single-file:
+   - auto-loads images from GitHub raw base, relative path, or uploaded files
+   - only fields to fill: customer name/email/phone + plan
+   - totals placed below items, signature right side
+   - invoice number auto-increment (localStorage)
 */
 
 (function(){
-  // CONFIG: Edit here if you want hard-coded GitHub raw base by default
+  // CONFIG: set your GitHub raw folder URL here OR paste it in input
   const GITHUB_RAW_BASE_DEFAULT = ''; // e.g. 'https://raw.githubusercontent.com/username/repo/branch/path/'
 
-  // DOM
+  // DOM elements
   const githubRawInput = document.getElementById('github_raw');
   const logoFileInput = document.getElementById('logo_file');
   const signatureFileInput = document.getElementById('signature_file');
@@ -210,10 +238,10 @@
   const display_invoice_no = document.getElementById('display_invoice_no');
   const display_date = document.getElementById('display_date');
 
-  const previewBtn = document.getElementById('preview_btn');
+  const refreshBtn = document.getElementById('refresh_btn');
   const downloadBtn = document.getElementById('download_btn');
 
-  // defaults
+  // company constants
   const COMPANY = {
     name: 'Zulbulai',
     addr: 'kanpur उत्तर प्रदेश 208004',
@@ -222,135 +250,97 @@
     upi: 'Canvapro@upi'
   };
 
-  // utility: try loading image from list of sources sequentially
-  function tryLoadImageSequential(imgElement, candidates) {
-    return new Promise((resolve) => {
-      let idx = 0;
-      function tryNext() {
-        if (idx >= candidates.length) {
-          imgElement.style.display = 'none';
-          imgElement.src = '';
-          resolve(false);
-          return;
-        }
-        const src = candidates[idx++];
-        if (!src) { tryNext(); return; }
-        // Set up temporary handlers
-        let done = false;
-        function success(){
-          if(done) return; done = true;
-          imgElement.style.display = 'block';
-          resolve(true);
-        }
-        function failure(){
-          if(done) return; done = true;
-          // try next
-          tryNext();
-        }
-        // Attach onload/onerror
-        imgElement.onload = success;
-        imgElement.onerror = failure;
-        // start attempt
-        imgElement.src = src;
-        // add timeout fallback (6s)
-        setTimeout(function(){
-          if(done) return;
-          // if still not loaded, consider failure
-          done = true;
-          imgElement.onerror = null;
-          imgElement.onload = null;
-          tryNext();
-        }, 6000);
-      }
-      tryNext();
-    });
-  }
-
-  // build candidate URLs for each image name
-  function buildCandidates(base, filename) {
+  // helper: build candidate URLs
+  function buildCandidates(base, filename){
     const list = [];
-    if (base) {
-      // ensure base ends with slash
-      if (!base.endsWith('/')) base = base + '/';
-      list.push(base + filename);
+    if(base){
+      const b = base.endsWith('/') ? base : base + '/';
+      list.push(b + filename);
     }
-    // relative path (same folder)
     list.push('./' + filename);
     list.push(filename);
     return list;
   }
 
-  // read local file input to dataURL
-  function fileInputToDataUrl(fileInput) {
-    return new Promise((resolve) => {
-      const f = fileInput.files && fileInput.files[0];
-      if (!f) { resolve(null); return; }
-      const rdr = new FileReader();
-      rdr.onload = function(ev){ resolve(ev.target.result); };
-      rdr.onerror = function(){ resolve(null); };
-      rdr.readAsDataURL(f);
+  // try sequential load of image src list
+  function tryLoadImageSequential(imgEl, list){
+    return new Promise(resolve=>{
+      let i=0;
+      function next(){
+        if(i>=list.length){ imgEl.style.display='none'; imgEl.src=''; resolve(false); return; }
+        const src = list[i++];
+        if(!src){ next(); return; }
+        let done=false;
+        imgEl.onload = function(){ if(done) return; done=true; imgEl.style.display='block'; resolve(true); };
+        imgEl.onerror = function(){ if(done) return; done=true; next(); };
+        imgEl.src = src;
+        setTimeout(function(){ if(done) return; done=true; next(); },5000);
+      }
+      next();
     });
   }
 
-  // initial: set invoice no (localStorage increment)
-  function initInvoiceNo() {
-    const key = 'zulbulai_invoice_counter_v1';
-    let counter = Number(localStorage.getItem(key) || 0);
-    counter = counter + 1;
-    localStorage.setItem(key, String(counter));
-    const inv = 'ZUL-' + String(new Date().getFullYear()).slice(2) + '-' + String(counter).padStart(4,'0');
+  function fileToDataUrl(inp){
+    return new Promise(resolve=>{
+      const f = inp.files && inp.files[0];
+      if(!f) return resolve(null);
+      const r = new FileReader();
+      r.onload = e => resolve(e.target.result);
+      r.onerror = () => resolve(null);
+      r.readAsDataURL(f);
+    });
+  }
+
+  // auto invoice no using localStorage
+  function initInvoiceNo(){
+    const key = 'zulbulai_inv_counter_v2';
+    let c = Number(localStorage.getItem(key) || 0);
+    c = c + 1;
+    localStorage.setItem(key, String(c));
+    const inv = 'ZUL-' + new Date().getFullYear().toString().slice(2) + '-' + String(c).padStart(4,'0');
     invoiceNoInput.value = inv;
   }
 
-  // date default
-  if (!invoiceDateInput.value) invoiceDateInput.value = new Date().toISOString().slice(0,10);
+  if(!invoiceDateInput.value) invoiceDateInput.value = new Date().toISOString().slice(0,10);
+  initInvoiceNo();
 
-  // main image auto-load flow
-  async function attemptAutoLoadImages() {
-    const baseFromInput = (githubRawInput.value || '').trim() || GITHUB_RAW_BASE_DEFAULT;
-    // LOGO
-    let candidatesLogo = buildCandidates(baseFromInput, 'logo.png');
-    // For signature and QR
-    let candidatesSig = buildCandidates(baseFromInput, 'signature.png');
-    let candidatesQr = buildCandidates(baseFromInput, 'qr.png');
+  // attempt images load
+  async function attemptImages(){
+    const base = (githubRawInput.value || '').trim() || GITHUB_RAW_BASE_DEFAULT;
+    const logoCandidates = buildCandidates(base,'logo.png');
+    const sigCandidates = buildCandidates(base,'signature.png');
+    const qrCandidates = buildCandidates(base,'qr.png');
 
-    // try Github/raw and relative candidates first
-    let logoLoaded = await tryLoadImageSequential(logoImg, candidatesLogo);
-    let sigLoaded = await tryLoadImageSequential(sigPreview, candidatesSig);
-    let qrLoaded = await tryLoadImageSequential(qrPreview, candidatesQr);
+    let logoLoaded = await tryLoadImageSequential(logoImg, logoCandidates);
+    let sigLoaded = await tryLoadImageSequential(sigPreview, sigCandidates);
+    let qrLoaded = await tryLoadImageSequential(qrPreview, qrCandidates);
 
-    // if any not loaded, but user has uploaded file, use that
-    if (!logoLoaded && logoFileInput.files.length) {
-      const data = await fileInputToDataUrl(logoFileInput);
-      if (data) { logoImg.src = data; logoImg.style.display = 'block'; logoLoaded = true; }
+    // fallback to uploaded files
+    if(!logoLoaded && logoFileInput.files.length){
+      const d = await fileToDataUrl(logoFileInput); if(d){ logoImg.src=d; logoImg.style.display='block'; logoLoaded=true; }
     }
-    if (!sigLoaded && signatureFileInput.files.length) {
-      const data = await fileInputToDataUrl(signatureFileInput);
-      if (data) { sigPreview.src = data; sigPreview.style.display = 'block'; sigLoaded = true; }
+    if(!sigLoaded && signatureFileInput.files.length){
+      const d = await fileToDataUrl(signatureFileInput); if(d){ sigPreview.src=d; sigPreview.style.display='block'; sigLoaded=true; }
     }
-    if (!qrLoaded && qrFileInput.files.length) {
-      const data = await fileInputToDataUrl(qrFileInput);
-      if (data) { qrPreview.src = data; qrPreview.style.display = 'block'; qrLoaded = true; }
+    if(!qrLoaded && qrFileInput.files.length){
+      const d = await fileToDataUrl(qrFileInput); if(d){ qrPreview.src=d; qrPreview.style.display='block'; qrLoaded=true; }
     }
-
-    // final: if still not loaded, hide elements
-    if (!logoLoaded) { logoImg.style.display = 'none'; }
-    if (!sigLoaded) { sigPreview.style.display = 'none'; }
-    if (!qrLoaded) { qrPreview.style.display = 'none'; }
+    if(!logoLoaded) { logoImg.style.display='none'; }
+    if(!sigLoaded) { sigPreview.style.display='none'; }
+    if(!qrLoaded) { qrPreview.style.display='none'; }
   }
 
-  // wire local file change -> show preview immediately
-  logoFileInput.addEventListener('change', async function(){ const d = await fileInputToDataUrl(logoFileInput); if (d) { logoImg.src = d; logoImg.style.display='block'; }});
-  signatureFileInput.addEventListener('change', async function(){ const d = await fileInputToDataUrl(signatureFileInput); if (d) { sigPreview.src = d; sigPreview.style.display='block'; }});
-  qrFileInput.addEventListener('change', async function(){ const d = await fileInputToDataUrl(qrFileInput); if (d) { qrPreview.src = d; qrPreview.style.display='block'; }});
+  // wire file inputs to preview
+  logoFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(logoFileInput); if(d){ logoImg.src=d; logoImg.style.display='block'; }});
+  signatureFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(signatureFileInput); if(d){ sigPreview.src=d; sigPreview.style.display='block'; }});
+  qrFileInput.addEventListener('change', async ()=>{ const d=await fileToDataUrl(qrFileInput); if(d){ qrPreview.src=d; qrPreview.style.display='block'; }});
 
-  // update amounts / preview
+  // refresh preview
   function money(v){ return Number(v||0).toFixed(2); }
-
-  function refreshPreview() {
+  function refreshPreview(){
     p_cust_name.textContent = custName.value || 'Customer Name';
-    p_cust_email.textContent = custEmail.value || '';
-    p_cust_phone.textContent = custPhone.value || '';
+    p_cust_email.textContent = custEmail.value || COMPANY.email;
+    p_cust_phone.textContent = custPhone.value || COMPANY.phone;
     p_invoice_no.textContent = invoiceNoInput.value || '';
     display_invoice_no.textContent = invoiceNoInput.value || '';
     p_invoice_date.textContent = invoiceDateInput.value || '';
@@ -361,84 +351,66 @@
     p_line_total.textContent = money(amt);
     p_subtotal.textContent = money(amt);
     const tax = 0;
-    p_tax.textContent = money(amt * tax / 100);
-    p_total.textContent = money(amt + (amt * tax / 100));
+    p_tax.textContent = money(amt * tax/100);
+    p_total.textContent = money(amt + (amt*tax/100));
   }
 
-  // initial invoice no and images
-  initInvoiceNo();
-  attemptAutoLoadImages();
+  // events
+  [custName,custEmail,custPhone,planSelect,invoiceNoInput,invoiceDateInput,githubRawInput].forEach(el=>el.addEventListener('input', refreshPreview));
+  refresh_btn = document.getElementById('refresh_btn');
+  refresh_btn.addEventListener('click', async function(e){ e.preventDefault(); await attemptImages(); refreshPreview(); alert('Preview refreshed.'); });
+
+  // initial
+  attemptImages();
   refreshPreview();
 
-  // wire inputs
-  [custName, custEmail, custPhone, planSelect, invoiceNoInput, invoiceDateInput, githubRawInput].forEach(el => {
-    el.addEventListener('input', refreshPreview);
-  });
-
-  previewBtn.addEventListener('click', async function(e){
-    e.preventDefault();
-    // if user changed github raw input, try reload images again
-    await attemptAutoLoadImages();
-    refreshPreview();
-    alert('Preview refreshed (images attempted from GitHub/raw, relative path, then uploaded files).');
-  });
-
-  // download PDF
+  // generate PDF
   downloadBtn.addEventListener('click', async function(e){
     e.preventDefault();
-    // simple validation
-    if (!custName.value.trim()) { alert('Please enter customer name'); return; }
-    if (!planSelect.value || Number(planSelect.value) === 0) { if (!confirm('Plan not selected or amount 0. Continue?')) return; }
+    if(!custName.value.trim()){ alert('Please enter customer name'); return; }
+    if(!planSelect.value || Number(planSelect.value)===0){ if(!confirm('Plan not selected or amount 0. Continue?')) return; }
 
-    // make sure images are attempted to load before rendering
-    await attemptAutoLoadImages();
+    // ensure images loaded
+    await attemptImages();
     refreshPreview();
 
     downloadBtn.disabled = true; downloadBtn.textContent = 'Preparing PDF...';
 
     try {
       const invoiceEl = document.getElementById('invoice_area');
-
-      // Workaround: ensure images are loaded (wait if any image is still loading)
-      await new Promise(resolve => setTimeout(resolve, 300)); // small delay to let images settle
-
-      const scale = 2; // increase for higher quality (memory cost)
-      const opts = { scale: scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' };
+      // small wait for image rendering
+      await new Promise(r=>setTimeout(r,300));
+      const scale = 2;
+      const opts = { scale: scale, useCORS:true, allowTaint:true, backgroundColor:'#ffffff' };
       const canvas = await html2canvas(invoiceEl, opts);
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+      const img = canvas.toDataURL('image/jpeg',0.95);
       const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+      const pdf = new jsPDF({ unit:'mm', format:'a4' });
 
       const pageW = pdf.internal.pageSize.getWidth();
       const pageH = pdf.internal.pageSize.getHeight();
       const margin = 10;
-      const availW = pageW - margin * 2;
-      const availH = pageH - margin * 2;
+      const availW = pageW - margin*2;
+      const availH = pageH - margin*2;
 
       const pxToMm = 0.264583 * (1/scale);
       const imgW = canvas.width * pxToMm;
       const imgH = canvas.height * pxToMm;
 
       let renderW = imgW, renderH = imgH;
-      if (renderW > availW) { const r = availW / renderW; renderW = availW; renderH = renderH * r; }
-      if (renderH > availH) { const r = availH / renderH; renderH = availH; renderW = renderW * r; }
+      if(renderW > availW){ const r = availW / renderW; renderW = availW; renderH = renderH * r; }
+      if(renderH > availH){ const r = availH / renderH; renderH = availH; renderW = renderW * r; }
 
-      const x = (pageW - renderW) / 2;
-      const y = margin + ((availH - renderH) / 2);
+      const x = (pageW - renderW)/2;
+      const y = margin + ((availH - renderH)/2);
 
-      pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
+      pdf.addImage(img, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
 
       const fname = (invoiceNoInput.value || 'invoice') + '-' + (new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
       pdf.save(fname);
-
-      // increment local storage counter (so next invoice will be higher)
-      // we already incremented in init; optionally increment here for multiple generation
-      // localStorage counter remains consistent.
-
-    } catch (err) {
-      console.error('PDF error', err);
-      alert('PDF generation failed: ' + (err && err.message ? err.message : String(err)));
+    } catch(err){
+      console.error(err);
+      alert('PDF generation failed: ' + (err.message || err));
     } finally {
       downloadBtn.disabled = false; downloadBtn.textContent = 'Download PDF';
     }
