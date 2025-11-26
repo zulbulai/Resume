@@ -1,430 +1,698 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html lang="hi">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Zulbulai — Invoice (Fixed Layout)</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zulbulai Invoice Generator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-<!-- libs -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
 
-<style>
-  :root{
-    --accent:#f6a800;  /* orange */
-    --navy:#131844;
-    --muted:#6b7280;
-    --bg:#f4f6fb;
-    --paper:#ffffff;
-  }
-  body{font-family:Inter, Arial, sans-serif; background:var(--bg); margin:0; padding:18px; color:#111}
-  .container{max-width:1100px;margin:12px auto;display:grid;grid-template-columns:360px 1fr;gap:14px}
-  .card{background:var(--paper);padding:14px;border-radius:10px;box-shadow:0 6px 18px rgba(3,10,34,0.06)}
-  h3{margin:0 0 8px 0}
-  label{font-size:13px;color:var(--muted);display:block;margin-top:8px}
-  input[type=text], input[type=email], input[type=tel], select, textarea{width:100%;padding:8px;border:1px solid #e6e9f0;border-radius:6px;box-sizing:border-box}
-  textarea{min-height:70px; resize:vertical}
-  .btn{background:var(--navy);color:#fff;padding:8px 12px;border-radius:8px;border:none;cursor:pointer}
-  .btn.secondary{background:var(--accent);color:#111}
-  .muted{color:var(--muted);font-size:13px}
-  .invoice-sheet{background:var(--paper);padding:22px;border-radius:6px; box-shadow:0 8px 28px rgba(3,10,34,0.08)}
-  .inv-head{display:flex;justify-content:space-between;align-items:flex-start; gap:12px}
-  .logo{max-width:160px;max-height:72px;object-fit:contain}
-  .accent-bar{height:12px;background:var(--accent);width:100%;margin-top:8px;border-radius:4px}
-  .title{font-size:36px;color:var(--navy);font-weight:700;margin:18px 0}
-  .row-flex{display:flex;gap:12px}
-  .inv-left{width:58%}
-  .inv-right{width:42%}
-  .section-title{font-weight:700;color:var(--navy);font-size:13px;margin-bottom:6px}
-  .field-muted{font-size:13px;color:var(--muted);margin-bottom:4px}
-  table.items{width:100%;border-collapse:collapse;margin-top:12px}
-  table.items th, table.items td{border:1px solid #e6e9f0;padding:10px;font-size:13px;vertical-align:middle}
-  table.items th{background:var(--navy);color:#fff;font-weight:700;font-size:12px}
-  .totals-wrap{display:flex;justify-content:flex-end;margin-top:12px}
-  .totals-box{width:320px;border:1px solid #e6e9f0;padding:10px;border-radius:6px;background:#fff}
-  .totals-row{display:flex;justify-content:space-between;padding:8px 6px;border-bottom:1px dashed #eef2ff}
-  .totals-row.total{font-weight:800;background:#f8fafc;border-top:2px solid #e6e9f0}
-  .payment-row{display:flex;justify-content:space-between;align-items:center;margin-top:18px;gap:12px}
-  .qr{max-width:140px;border:1px solid #eee;padding:6px;background:#fff}
-  .signature-area{display:flex;justify-content:flex-end;align-items:flex-end;margin-top:20px;gap:12px}
-  .sig-img{max-width:220px;display:block}
-  footer.note{border-top:3px solid var(--navy);padding-top:10px;margin-top:18px;font-size:12px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-  .customer-block{background:#fbfcff;padding:10px;border-radius:6px;border:1px solid #eef2ff;margin-bottom:6px}
-  @media(max-width:900px){.container{grid-template-columns:1fr}.inv-left,.inv-right{width:100%}.totals-wrap{justify-content:flex-start}}
-</style>
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .form-section {
+            padding: 30px;
+            background: #f8f9fa;
+            border-bottom: 3px solid #ff6b35;
+        }
+
+        .form-section h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .form-section p {
+            color: #7f8c8d;
+            margin-bottom: 25px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #34495e;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #ff6b35;
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.1);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 14px 25px;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #e55a28;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 107, 53, 0.3);
+        }
+
+        .btn-secondary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        /* Invoice Preview Styles */
+        #invoice-preview {
+            padding: 50px;
+            background: white;
+            display: none;
+        }
+
+        .invoice-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 40px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid #ff6b35;
+        }
+
+        .company-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .company-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+
+        .company-details h2 {
+            color: #2c3e50;
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+
+        .company-details p {
+            color: #7f8c8d;
+            line-height: 1.6;
+            margin: 3px 0;
+        }
+
+        .invoice-title {
+            text-align: right;
+        }
+
+        .invoice-title h1 {
+            color: #ff6b35;
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .invoice-meta {
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .invoice-meta strong {
+            color: #34495e;
+        }
+
+        .invoice-body {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        .section-box {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #ff6b35;
+        }
+
+        .section-box h3 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .section-box p {
+            color: #34495e;
+            line-height: 1.8;
+            margin: 5px 0;
+        }
+
+        .invoice-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+
+        .invoice-table thead {
+            background: #2c3e50;
+            color: white;
+        }
+
+        .invoice-table th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        .invoice-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .invoice-table tbody tr:hover {
+            background: #f8f9fa;
+        }
+
+        .text-right {
+            text-align: right;
+        }
+
+        .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 40px;
+        }
+
+        .totals-box {
+            min-width: 350px;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .total-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            color: #34495e;
+        }
+
+        .total-row.final {
+            border-top: 3px solid #ff6b35;
+            margin-top: 10px;
+            padding-top: 15px;
+            font-size: 20px;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+
+        .invoice-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 2px solid #e0e0e0;
+        }
+
+        .payment-info {
+            flex: 1;
+        }
+
+        .payment-info h4 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+        }
+
+        .payment-info p {
+            color: #7f8c8d;
+            line-height: 1.8;
+            margin: 5px 0;
+        }
+
+        .qr-code {
+            width: 150px;
+            height: 150px;
+            object-fit: contain;
+            margin-top: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            background: white;
+        }
+
+        .signature-section {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+        }
+
+        .signature-image {
+            width: 180px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
+        .signature-line {
+            width: 200px;
+            border-top: 2px solid #2c3e50;
+            padding-top: 10px;
+            font-weight: 600;
+            color: #2c3e50;
+            text-align: center;
+        }
+
+        .image-error {
+            color: #e74c3c;
+            font-size: 12px;
+            font-style: italic;
+        }
+
+        @media print {
+            body {
+                background: white;
+                padding: 0;
+            }
+
+            .form-section {
+                display: none;
+            }
+
+            #invoice-preview {
+                display: block !important;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .invoice-header {
+                flex-direction: column;
+                gap: 20px;
+            }
+
+            .invoice-title {
+                text-align: left;
+            }
+
+            .invoice-body {
+                grid-template-columns: 1fr;
+            }
+
+            .invoice-footer {
+                flex-direction: column;
+                gap: 30px;
+                align-items: flex-start;
+            }
+
+            .signature-section {
+                align-items: flex-start;
+            }
+        }
+    </style>
 </head>
 <body>
+    <div class="container">
+        <!-- Form Section -->
+        <div class="form-section">
+            <h1>📄 Invoice Generator - Zulbulai</h1>
+            <p>Customer और Subscription details भरें</p>
 
-<div class="container">
-  <!-- LEFT: minimal form -->
-  <div class="card">
-    <h3>Quick Invoice — Fill only customer & plan</h3>
-    <div class="muted" style="margin-bottom:8px">Auto-filled: Zulbulai — kanpur उत्तर प्रदेश 208004 — zulbulai@gmail.com</div>
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="customerName">Customer Name *</label>
+                    <input type="text" id="customerName" placeholder="पूरा नाम" required>
+                </div>
 
-    <label>Customer Name</label>
-    <input id="cust_name" type="text" placeholder="Customer name">
+                <div class="form-group">
+                    <label for="customerEmail">Email Address *</label>
+                    <input type="email" id="customerEmail" placeholder="email@example.com" required>
+                </div>
 
-    <label>Customer Email</label>
-    <input id="cust_email" type="email" placeholder="customer@example.com">
+                <div class="form-group">
+                    <label for="customerPhone">Phone Number *</label>
+                    <input type="tel" id="customerPhone" placeholder="10-digit number" required>
+                </div>
 
-    <label>Customer Phone</label>
-    <input id="cust_phone" type="tel" placeholder="10-digit phone">
+                <div class="form-group">
+                    <label for="subscriptionPlan">Subscription Plan *</label>
+                    <select id="subscriptionPlan" required>
+                        <option value="">-- Select Plan --</option>
+                        <option value="monthly" data-amount="49">Monthly - ₹49</option>
+                        <option value="quarterly" data-amount="99">Quarterly - ₹99</option>
+                        <option value="annual" data-amount="299">Annual - ₹299</option>
+                    </select>
+                </div>
+            </div>
 
-    <label>Customer Address</label>
-    <textarea id="cust_addr" placeholder="Customer full address (line1, city, state, PIN)"></textarea>
-
-    <label>Subscription plan</label>
-    <select id="plan_select">
-      <option value="0">Select plan — amount auto-set</option>
-      <option value="499">Basic — ₹499</option>
-      <option value="999">Standard — ₹999</option>
-      <option value="1999">Premium — ₹1999</option>
-      <option value="4999">Enterprise — ₹4999</option>
-    </select>
-
-    <label style="margin-top:10px">Invoice No (auto)</label>
-    <input id="invoice_no" type="text" value="">
-
-    <label style="margin-top:10px">Invoice Date</label>
-    <input id="invoice_date" type="date">
-
-    <label style="margin-top:10px">(Optional) GitHub raw base URL for images</label>
-    <input id="github_raw" type="text" placeholder="https://raw.githubusercontent.com/username/repo/branch/path/to/folder/">
-
-    <label style="margin-top:10px">(Fallback) Upload logo / signature / qr</label>
-    <input id="logo_file" type="file" accept="image/*" style="margin-top:6px">
-    <input id="signature_file" type="file" accept="image/*" style="margin-top:6px">
-    <input id="qr_file" type="file" accept="image/*" style="margin-top:6px">
-
-    <div style="margin-top:12px; display:flex; gap:8px;">
-      <button id="preview_btn" class="btn">Refresh Preview</button>
-      <button id="download_btn" class="btn secondary" style="margin-left:auto">Download PDF</button>
-    </div>
-
-    <div style="margin-top:12px; font-size:13px;" class="muted">
-      Payment: UPI — <strong>Canvapro@upi</strong><br>
-      Phone: <strong>6387617678</strong>
-    </div>
-
-    <div style="margin-top:8px" class="small-muted">Notes: Images tried from GitHub raw → relative → uploaded files.</div>
-  </div>
-
-  <!-- RIGHT: Invoice preview -->
-  <div class="invoice-sheet" id="invoice_area" role="document" aria-label="Invoice preview">
-    <div class="inv-head">
-      <div style="max-width:60%">
-        <img id="logo_img" class="logo" src="" alt="logo" style="display:none">
-        <div class="accent-bar"></div>
-      </div>
-      <div style="text-align:right">
-        <div style="font-size:13px;color:var(--muted)">Invoice</div>
-        <div id="display_invoice_no" style="font-weight:700;font-size:18px">INV-0001</div>
-        <div id="display_date" class="muted"></div>
-      </div>
-    </div>
-
-    <div class="title">INVOICE</div>
-
-    <!-- customer + invoice details -->
-    <div class="row-flex" style="gap:22px;">
-      <div class="inv-left">
-        <div class="section-title">INVOICE TO</div>
-        <div class="customer-block">
-          <div style="font-weight:700;font-size:15px" id="p_cust_name">Customer Name</div>
-          <div class="field-muted" id="p_cust_email">email@example.com</div>
-          <div class="field-muted" id="p_cust_phone">Phone</div>
-          <div style="margin-top:6px" class="field-muted" id="p_cust_addr">Customer address line</div>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="generateInvoice()">✨ Generate Invoice</button>
+                <button class="btn btn-secondary" onclick="downloadPDF()">📥 Download PDF</button>
+            </div>
         </div>
 
-        <div style="margin-top:8px" class="field-muted">Company: <strong>Zulbulai</strong><br>kanpur उत्तर प्रदेश 208004</div>
-      </div>
+        <!-- Invoice Preview Section -->
+        <div id="invoice-preview">
+            <div class="invoice-header">
+                <div class="company-info">
+                    <img id="companyLogo" class="company-logo" alt="Company Logo">
+                    <div class="company-details">
+                        <h2>ZULBULAI</h2>
+                        <p>📧 zulbulai@gmail.com</p>
+                        <p>📞 6387617678</p>
+                        <p>📍 Sahibabad, New Delhi,<br>Ghaziabad, Uttar Pradesh 201005</p>
+                    </div>
+                </div>
 
-      <div class="inv-right">
-        <div class="section-title">INVOICE DETAILS</div>
-        <div class="field-muted">Invoice No: <strong id="p_invoice_no">INV-0001</strong></div>
-        <div class="field-muted">Date: <strong id="p_invoice_date">--/--/----</strong></div>
-        <div style="margin-top:10px" class="field-muted"><strong>Prepared by:</strong> Zulbulai</div>
-        <div style="margin-top:8px" class="field-muted">Email: zulbulai@gmail.com</div>
-      </div>
-    </div>
+                <div class="invoice-title">
+                    <h1>INVOICE</h1>
+                    <div class="invoice-meta">
+                        <p><strong>Invoice #:</strong> <span id="invoiceNumber"></span></p>
+                        <p><strong>Date:</strong> <span id="invoiceDate"></span></p>
+                    </div>
+                </div>
+            </div>
 
-    <!-- items -->
-    <table class="items" aria-hidden="false" style="margin-top:16px">
-      <thead>
-        <tr>
-          <th style="width:8%">SL NO</th>
-          <th>DESCRIPTION</th>
-          <th style="width:12%">QTY</th>
-          <th style="width:16%">UNIT PRICE (₹)</th>
-          <th style="width:16%">TOTAL (₹)</th>
-        </tr>
-      </thead>
-      <tbody id="p_items">
-        <tr>
-          <td>1</td>
-          <td>Subscription Plan</td>
-          <td>1</td>
-          <td id="p_price">0.00</td>
-          <td id="p_line_total">0.00</td>
-        </tr>
-      </tbody>
-    </table>
+            <div class="invoice-body">
+                <div class="section-box">
+                    <h3>Bill To:</h3>
+                    <p><strong id="displayName"></strong></p>
+                    <p id="displayEmail"></p>
+                    <p id="displayPhone"></p>
+                </div>
 
-    <!-- totals moved below items, right aligned -->
-    <div class="totals-wrap">
-      <div class="totals-box" role="note" aria-label="Totals">
-        <div class="totals-row"><div>Sub Total</div><div id="p_subtotal">0.00</div></div>
-        <div class="totals-row"><div>Tax (0%)</div><div id="p_tax">0.00</div></div>
-        <div class="totals-row total"><div>Total</div><div id="p_total">0.00</div></div>
-      </div>
-    </div>
+                <div class="section-box">
+                    <h3>Payment Details:</h3>
+                    <p><strong>UPI ID:</strong> Canvapro@upi</p>
+                    <p><strong>Method:</strong> Digital Payment</p>
+                    <img id="qrCode" class="qr-code" alt="Payment QR Code">
+                </div>
+            </div>
 
-    <!-- payment + qr + signature on right -->
-    <div class="payment-row">
-      <div>
-        <div style="font-weight:700">Payment (UPI)</div>
-        <div class="field-muted" style="margin-top:6px">UPI ID: <strong>Canvapro@upi</strong></div>
-        <div class="field-muted">Phone: <strong>6387617678</strong></div>
-      </div>
+            <table class="invoice-table">
+                <thead>
+                    <tr>
+                        <th>SL NO.</th>
+                        <th>Description</th>
+                        <th>Duration</th>
+                        <th class="text-right">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1</td>
+                        <td id="planDescription">Subscription Plan</td>
+                        <td id="planDuration"></td>
+                        <td class="text-right" id="planAmount">₹0</td>
+                    </tr>
+                </tbody>
+            </table>
 
-      <div style="text-align:right; width:240px;">
-        <img id="qr_preview" class="qr" src="" alt="QR" style="display:none">
-        <div style="margin-top:6px" class="field-muted">Scan to Pay</div>
+            <div class="totals-section">
+                <div class="totals-box">
+                    <div class="total-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">₹0</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Tax (0%):</span>
+                        <span>₹0</span>
+                    </div>
+                    <div class="total-row final">
+                        <span>Total Amount:</span>
+                        <span id="totalAmount">₹0</span>
+                    </div>
+                </div>
+            </div>
 
-        <!-- signature placed under totals at right -->
-        <div class="signature-area" style="margin-top:12px;">
-          <div style="text-align:right;">
-            <img id="sig_preview" class="sig-img" src="" alt="signature" style="display:none">
-            <div style="font-weight:700;color:var(--accent);margin-top:6px" id="sig_name">Authorized Signatory</div>
-            <div style="font-size:12px;color:var(--muted)">Zulbulai</div>
-          </div>
+            <div class="invoice-footer">
+                <div class="payment-info">
+                    <h4>🙏 Thank You for Your Business!</h4>
+                    <p>Payment को UPI ID: <strong>Canvapro@upi</strong> पर करें</p>
+                    <p>किसी भी query के लिए हमें contact करें</p>
+                </div>
+
+                <div class="signature-section">
+                    <img id="signatureImage" class="signature-image" alt="Authorized Signature">
+                    <div class="signature-line">
+                        Authorized Signature<br>
+                        <strong>Zulbulai</strong>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
     </div>
 
-    <footer class="note">
-      <div>Terms: Payment due on receipt. For queries contact 6387617678</div>
-      <div style="font-weight:700">Zulbulai</div>
-    </footer>
+    <!-- Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-  </div>
+    <script>
+        // Image loading function
+        function loadImages() {
+            // Load logo
+            const logo = document.getElementById('companyLogo');
+            logo.src = './logo.png';
+            logo.onerror = function() {
+                // Hide logo if not found
+                this.style.display = 'none';
+            };
 
-</div>
+            // Load signature
+            const signature = document.getElementById('signatureImage');
+            signature.src = './signature.png';
+            signature.onerror = function() {
+                // Hide signature image if not found
+                this.style.display = 'none';
+            };
 
-<script>
-/* Auto image logic, invoice increment, layout fixes as requested */
-(function(){
-  const GITHUB_RAW_BASE_DEFAULT = ''; // set if you want default github raw base
+            // Load QR code
+            const qr = document.getElementById('qrCode');
+            qr.src = './qr.png';
+            qr.onerror = function() {
+                // Hide QR if not found
+                this.style.display = 'none';
+            };
+        }
 
-  // DOM
-  const githubRawInput = document.getElementById('github_raw');
-  const logoFileInput = document.getElementById('logo_file');
-  const signatureFileInput = document.getElementById('signature_file');
-  const qrFileInput = document.getElementById('qr_file');
+        // Load images when page loads
+        window.addEventListener('DOMContentLoaded', loadImages);
 
-  const logoImg = document.getElementById('logo_img');
-  const sigPreview = document.getElementById('sig_preview');
-  const qrPreview = document.getElementById('qr_preview');
+        // Initialize invoice counter
+        if (!localStorage.getItem('invoiceCounter')) {
+            localStorage.setItem('invoiceCounter', '1000');
+        }
 
-  const custName = document.getElementById('cust_name');
-  const custEmail = document.getElementById('cust_email');
-  const custPhone = document.getElementById('cust_phone');
-  const custAddr = document.getElementById('cust_addr');
-  const planSelect = document.getElementById('plan_select');
-  const invoiceNoInput = document.getElementById('invoice_no');
-  const invoiceDateInput = document.getElementById('invoice_date');
+        function generateInvoice() {
+            // Get form values
+            const name = document.getElementById('customerName').value.trim();
+            const email = document.getElementById('customerEmail').value.trim();
+            const phone = document.getElementById('customerPhone').value.trim();
+            const planSelect = document.getElementById('subscriptionPlan');
+            const planValue = planSelect.value;
 
-  const p_cust_name = document.getElementById('p_cust_name');
-  const p_cust_email = document.getElementById('p_cust_email');
-  const p_cust_phone = document.getElementById('p_cust_phone');
-  const p_cust_addr = document.getElementById('p_cust_addr');
-  const p_invoice_no = document.getElementById('p_invoice_no');
-  const p_invoice_date = document.getElementById('p_invoice_date');
-  const p_price = document.getElementById('p_price');
-  const p_line_total = document.getElementById('p_line_total');
-  const p_subtotal = document.getElementById('p_subtotal');
-  const p_tax = document.getElementById('p_tax');
-  const p_total = document.getElementById('p_total');
-  const display_invoice_no = document.getElementById('display_invoice_no');
-  const display_date = document.getElementById('display_date');
+            // Validation
+            if (!name || !email || !phone || !planValue) {
+                alert('कृपया सभी fields भरें! ❌');
+                return;
+            }
 
-  const previewBtn = document.getElementById('preview_btn');
-  const downloadBtn = document.getElementById('download_btn');
+            // Email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                alert('Valid email address डालें! ❌');
+                return;
+            }
 
-  // defaults
-  const COMPANY = {
-    name: 'Zulbulai',
-    addr: 'kanpur उत्तर प्रदेश 208004',
-    email: 'zulbulai@gmail.com',
-    phone: '6387617678',
-    upi: 'Canvapro@upi'
-  };
+            // Phone validation
+            if (phone.length !== 10 || isNaN(phone)) {
+                alert('Valid 10-digit phone number डालें! ❌');
+                return;
+            }
 
-  // image loader helper
-  function tryLoadImageSequential(imgElement, candidates) {
-    return new Promise((resolve) => {
-      let idx = 0;
-      function tryNext(){
-        if (idx >= candidates.length) { imgElement.style.display='none'; imgElement.src=''; resolve(false); return; }
-        const src = candidates[idx++]; if(!src){ tryNext(); return; }
-        let done = false;
-        function success(){ if(done) return; done=true; imgElement.style.display='block'; resolve(true); }
-        function failure(){ if(done) return; done=true; tryNext(); }
-        imgElement.onload = success;
-        imgElement.onerror = failure;
-        imgElement.src = src;
-        setTimeout(function(){ if(done) return; done=true; tryNext(); }, 5000);
-      }
-      tryNext();
-    });
-  }
+            // Get plan details
+            const selectedOption = planSelect.options[planSelect.selectedIndex];
+            const amount = selectedOption.getAttribute('data-amount');
+            const planText = selectedOption.text;
 
-  function buildCandidates(base, filename){
-    const list = [];
-    if (base) { if(!base.endsWith('/')) base = base + '/'; list.push(base + filename); }
-    list.push('./' + filename);
-    list.push(filename);
-    return list;
-  }
+            let planName = '';
+            let duration = '';
 
-  function fileInputToDataUrl(fileInput){
-    return new Promise((resolve)=> {
-      const f = fileInput.files && fileInput.files[0];
-      if(!f){ resolve(null); return; }
-      const rdr = new FileReader();
-      rdr.onload = function(ev){ resolve(ev.target.result); };
-      rdr.onerror = function(){ resolve(null); };
-      rdr.readAsDataURL(f);
-    });
-  }
+            switch(planValue) {
+                case 'monthly':
+                    planName = 'Monthly Subscription';
+                    duration = '1 Month';
+                    break;
+                case 'quarterly':
+                    planName = 'Quarterly Subscription';
+                    duration = '3 Months';
+                    break;
+                case 'annual':
+                    planName = 'Annual Subscription';
+                    duration = '12 Months';
+                    break;
+            }
 
-  function initInvoiceNo(){
-    const key = 'zul_invoice_counter_v2';
-    let counter = Number(localStorage.getItem(key) || 0);
-    counter = counter + 1;
-    localStorage.setItem(key, String(counter));
-    const inv = 'ZUL-' + String(new Date().getFullYear()).slice(2) + '-' + String(counter).padStart(4,'0');
-    invoiceNoInput.value = inv;
-  }
+            // Update invoice
+            let counter = parseInt(localStorage.getItem('invoiceCounter'));
+            counter++;
+            localStorage.setItem('invoiceCounter', counter.toString());
 
-  if(!invoiceDateInput.value) invoiceDateInput.value = new Date().toISOString().slice(0,10);
+            document.getElementById('invoiceNumber').textContent = 'ZUL-' + counter;
 
-  async function attemptAutoLoadImages(){
-    const baseFromInput = (githubRawInput.value || '').trim() || GITHUB_RAW_BASE_DEFAULT;
-    const candidatesLogo = buildCandidates(baseFromInput, 'logo.png');
-    const candidatesSig = buildCandidates(baseFromInput, 'signature.png');
-    const candidatesQr = buildCandidates(baseFromInput, 'qr.png');
+            // Set date
+            const today = new Date();
+            const dateStr = today.toLocaleDateString('hi-IN', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            });
+            document.getElementById('invoiceDate').textContent = dateStr;
 
-    let logoLoaded = await tryLoadImageSequential(logoImg, candidatesLogo);
-    let sigLoaded = await tryLoadImageSequential(sigPreview, candidatesSig);
-    let qrLoaded = await tryLoadImageSequential(qrPreview, candidatesQr);
+            // Set customer details
+            document.getElementById('displayName').textContent = name;
+            document.getElementById('displayEmail').textContent = '📧 ' + email;
+            document.getElementById('displayPhone').textContent = '📞 ' + phone;
 
-    // fallback to uploaded files if provided
-    if(!logoLoaded && logoFileInput.files.length){
-      const d = await fileInputToDataUrl(logoFileInput);
-      if(d){ logoImg.src = d; logoImg.style.display='block'; logoLoaded = true; }
-    }
-    if(!sigLoaded && signatureFileInput.files.length){
-      const d = await fileInputToDataUrl(signatureFileInput);
-      if(d){ sigPreview.src = d; sigPreview.style.display='block'; sigLoaded = true; }
-    }
-    if(!qrLoaded && qrFileInput.files.length){
-      const d = await fileInputToDataUrl(qrFileInput);
-      if(d){ qrPreview.src = d; qrPreview.style.display='block'; qrLoaded = true; }
-    }
+            // Set plan details
+            document.getElementById('planDescription').textContent = planName;
+            document.getElementById('planDuration').textContent = duration;
+            document.getElementById('planAmount').textContent = '₹' + amount;
+            document.getElementById('subtotal').textContent = '₹' + amount;
+            document.getElementById('totalAmount').textContent = '₹' + amount;
 
-    if(!logoLoaded) { logoImg.style.display='none'; }
-    if(!sigLoaded) { sigPreview.style.display='none'; }
-    if(!qrLoaded) { qrPreview.style.display='none'; }
-  }
+            // Show invoice
+            document.getElementById('invoice-preview').style.display = 'block';
 
-  // preview & amounts
-  function money(v){ return Number(v||0).toFixed(2); }
+            // Smooth scroll to invoice
+            document.getElementById('invoice-preview').scrollIntoView({ 
+                behavior: 'smooth',
+                block: 'start'
+            });
 
-  function refreshPreview(){
-    p_cust_name.textContent = custName.value || 'Customer Name';
-    p_cust_email.textContent = custEmail.value || '';
-    p_cust_phone.textContent = custPhone.value || '';
-    p_cust_addr.textContent = custAddr.value || '';
-    p_invoice_no.textContent = invoiceNoInput.value || '';
-    display_invoice_no.textContent = invoiceNoInput.value || '';
-    p_invoice_date.textContent = invoiceDateInput.value || '';
+            alert('✅ Invoice generated successfully!');
+        }
 
-    const amt = Number(planSelect.value || 0);
-    p_price.textContent = money(amt);
-    p_line_total.textContent = money(amt);
-    p_subtotal.textContent = money(amt);
-    const tax = 0; // keep 0 or change if needed
-    p_tax.textContent = money(amt * tax / 100);
-    p_total.textContent = money(amt + amt * tax / 100);
-  }
+        async function downloadPDF() {
+            const invoicePreview = document.getElementById('invoice-preview');
 
-  // events
-  initInvoiceNo();
-  attemptAutoLoadImages();
-  refreshPreview();
+            if (invoicePreview.style.display === 'none') {
+                alert('पहले invoice generate करें! ⚠️');
+                return;
+            }
 
-  [custName, custEmail, custPhone, custAddr, planSelect, invoiceNoInput, invoiceDateInput, githubRawInput].forEach(el=>{
-    el.addEventListener('input', refreshPreview);
-  });
+            try {
+                // Show loading
+                const btn = event.target;
+                const originalText = btn.textContent;
+                btn.textContent = '⏳ Generating PDF...';
+                btn.disabled = true;
 
-  logoFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(logoFileInput); if(d){ logoImg.src = d; logoImg.style.display='block'; } });
-  signatureFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(signatureFileInput); if(d){ sigPreview.src = d; sigPreview.style.display='block'; } });
-  qrFileInput.addEventListener('change', async ()=>{ const d = await fileInputToDataUrl(qrFileInput); if(d){ qrPreview.src = d; qrPreview.style.display='block'; } });
+                const canvas = await html2canvas(invoicePreview, {
+                    scale: 2,
+                    useCORS: true,
+                    allowTaint: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
 
-  previewBtn.addEventListener('click', async function(e){ e.preventDefault(); await attemptAutoLoadImages(); refreshPreview(); alert('Preview refreshed. Images attempted from GitHub/raw, relative, then uploaded files.'); });
+                const imgData = canvas.toDataURL('image/png');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
 
-  // PDF generation: A4, image high quality
-  downloadBtn.addEventListener('click', async function(e){
-    e.preventDefault();
-    if(!custName.value.trim()){ alert('Please enter customer name'); return; }
-    if(!planSelect.value || Number(planSelect.value) === 0){ if(!confirm('Plan not selected or amount 0. Continue?')) return; }
+                const imgWidth = 210; // A4 width in mm
+                const pageHeight = 297; // A4 height in mm
+                const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-    await attemptAutoLoadImages();
-    refreshPreview();
+                let heightLeft = imgHeight;
+                let position = 0;
 
-    downloadBtn.disabled = true; downloadBtn.textContent = 'Preparing PDF...';
+                pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
 
-    try {
-      const invoiceEl = document.getElementById('invoice_area');
-      // small wait to allow images to load
-      await new Promise(resolve => setTimeout(resolve, 350));
+                // Add new page if content is too long
+                while (heightLeft >= 0) {
+                    position = heightLeft - imgHeight;
+                    pdf.addPage();
+                    pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
+                    heightLeft -= pageHeight;
+                }
 
-      const scale = 2; // increase for higher quality
-      const canvas = await html2canvas(invoiceEl, { scale: scale, useCORS: true, allowTaint: true, backgroundColor: '#ffffff' });
+                const invoiceNum = document.getElementById('invoiceNumber').textContent;
+                const customerName = document.getElementById('displayName').textContent;
+                const fileName = `Invoice_${invoiceNum}_${customerName.replace(/\s+/g, '_')}.pdf`;
 
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
-      const { jsPDF } = window.jspdf;
-      const pdf = new jsPDF({ unit: 'mm', format: 'a4' });
+                pdf.save(fileName);
 
-      const pageW = pdf.internal.pageSize.getWidth();
-      const pageH = pdf.internal.pageSize.getHeight();
-      const margin = 10;
-      const availW = pageW - margin * 2;
-      const availH = pageH - margin * 2;
-      const pxToMm = 0.264583 * (1/scale);
-      const imgW = canvas.width * pxToMm;
-      const imgH = canvas.height * pxToMm;
+                // Reset button
+                btn.textContent = originalText;
+                btn.disabled = false;
 
-      let renderW = imgW, renderH = imgH;
-      if (renderW > availW) { const r = availW / renderW; renderW = availW; renderH = renderH * r; }
-      if (renderH > availH) { const r = availH / renderH; renderH = availH; renderW = renderW * r; }
-      const x = (pageW - renderW) / 2;
-      const y = margin + ((availH - renderH) / 2);
-      pdf.addImage(imgData, 'JPEG', x, y, renderW, renderH, undefined, 'FAST');
-
-      const fname = (invoiceNoInput.value || 'invoice') + '-' + (new Date()).toISOString().slice(0,19).replace(/[:T]/g,'-') + '.pdf';
-      pdf.save(fname);
-    } catch (err) {
-      console.error('PDF error', err);
-      alert('PDF generation failed: ' + (err && err.message ? err.message : String(err)));
-    } finally {
-      downloadBtn.disabled = false; downloadBtn.textContent = 'Download PDF';
-    }
-  });
-
-})();
-</script>
-
+                alert('✅ PDF downloaded successfully!');
+            } catch (error) {
+                console.error('PDF generation error:', error);
+                alert('PDF generation में error आया। फिर से try करें। ❌');
+                event.target.textContent = '📥 Download PDF';
+                event.target.disabled = false;
+            }
+        }
+    </script>
 </body>
 </html>
