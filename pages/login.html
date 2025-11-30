@@ -3,26 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Customer Login | Camva Pro</title>
+    <title>Check Status | Camva Pro</title>
     
-    <!-- LIBRARIES (React, Tailwind, Icons) -->
+    <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    
-    <!-- FONTS -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; }
-        .fade-in { animation: fadeIn 0.6s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .glass-card { background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); }
+        body { font-family: 'Outfit', sans-serif; background-color: #f1f5f9; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body class="flex items-center justify-center min-h-screen p-4 bg-slate-50">
+<body class="flex items-center justify-center min-h-screen p-4 bg-slate-100">
 
     <div id="root" class="w-full max-w-md"></div>
 
@@ -30,22 +27,17 @@
         // ==========================================
         // ⚙️ CONFIGURATION
         // ==========================================
-        
-        // आपका नया Web App URL
         const API_URL = "https://script.google.com/macros/s/AKfycbwWKXiL6xWik0Pyw0SexXUAslugCMN-NXYFo-P-_BOhIWTFUtHRt6RZ6JmgMwseY-_O/exec";
-        
         const SUPPORT_PHONE = "916387617678"; 
-        const UPI_ID = "6387617678@upi"; // अपना UPI ID यहाँ चेक कर लें
+        const UPI_ID = "canvapro@upi";
 
         const { useState, useEffect } = React;
 
-        // --- ICON COMPONENT ---
         const Icon = ({ name, size=20, className="" }) => {
             useEffect(() => lucide.createIcons(), [name]);
             return <i data-lucide={name} width={size} height={size} className={className}></i>;
         };
 
-        // --- MAIN APP ---
         const App = () => {
             const [user, setUser] = useState(null);
             const [email, setEmail] = useState('');
@@ -53,86 +45,79 @@
             const [error, setError] = useState('');
             const [showPay, setShowPay] = useState(false);
 
-            // 1. Auto-Login Check
+            // Auto-load last search
             useEffect(() => {
-                const savedUser = localStorage.getItem('camva_user_v2');
+                const savedUser = localStorage.getItem('camva_search_v1');
                 if(savedUser) setUser(JSON.parse(savedUser));
             }, []);
 
-            // 2. Login Logic
-            const handleLogin = async (e) => {
+            const handleSearch = async (e) => {
                 e.preventDefault();
                 setLoading(true);
                 setError('');
 
                 try {
-                    // Backend को डेटा भेजें
+                    // Backend call (Using 'login' action as search)
                     const response = await fetch(API_URL, {
                         method: 'POST',
                         body: JSON.stringify({
-                            action: 'login',
+                            action: 'login', // Backend logic remains same
                             data: { email: email }
                         })
                     });
-
                     const json = await response.json();
 
                     if(json.status === 'success') {
                         setUser(json.customer);
-                        localStorage.setItem('camva_user_v2', JSON.stringify(json.customer)); // Save login
+                        localStorage.setItem('camva_search_v1', JSON.stringify(json.customer));
                     } else {
-                        setError(json.message || 'Email not found in our database.');
+                        setError('No details found for this email.');
                     }
                 } catch(err) {
-                    setError('Network Error. Please check your internet.');
+                    setError('Connection Error. Try again.');
                 } finally {
                     setLoading(false);
                 }
             };
 
-            // 3. Logout Logic
-            const handleLogout = () => {
-                localStorage.removeItem('camva_user_v2');
+            const clearSearch = () => {
+                localStorage.removeItem('camva_search_v1');
                 setUser(null);
                 setEmail('');
                 setError('');
             };
 
-            // 4. WhatsApp Helper
             const openWA = (text) => {
                 window.open(`https://wa.me/${SUPPORT_PHONE}?text=${encodeURIComponent(text)}`, '_blank');
             };
 
-            // --- VIEW 1: LOGIN SCREEN ---
+            // --- VIEW 1: SEARCH SCREEN ---
             if (!user) {
                 return (
-                    <div className="bg-white rounded-3xl shadow-2xl p-8 fade-in border border-slate-100">
+                    <div className="bg-white rounded-3xl shadow-xl p-8 fade-in border border-slate-200">
                         <div className="text-center mb-8">
-                            <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
-                                <Icon name="lock" size={28} />
+                            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-blue-100">
+                                <Icon name="search" size={28} />
                             </div>
-                            <h1 className="text-2xl font-bold text-slate-800">Member Login</h1>
-                            <p className="text-slate-500 text-sm mt-1">Access your Camva Pro Dashboard</p>
+                            <h1 className="text-2xl font-bold text-slate-800">Check Status</h1>
+                            <p className="text-slate-500 text-sm mt-1">Enter your email to view plan details.</p>
                         </div>
 
-                        <form onSubmit={handleLogin} className="space-y-5">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-2 ml-1">Email Address</label>
-                                <div className="relative">
-                                    <div className="absolute left-4 top-3.5 text-slate-400"><Icon name="mail" size={18} /></div>
-                                    <input 
-                                        type="email" 
-                                        required 
-                                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-50 outline-none transition-all font-medium" 
-                                        placeholder="Enter your email"
-                                        value={email}
-                                        onChange={(e) => setEmail(e.target.value)}
-                                    />
-                                </div>
+                        <form onSubmit={handleSearch} className="space-y-5">
+                            <div className="relative">
+                                <div className="absolute left-4 top-3.5 text-slate-400"><Icon name="mail" size={18} /></div>
+                                <input 
+                                    type="email" 
+                                    required 
+                                    className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all font-medium bg-slate-50 focus:bg-white" 
+                                    placeholder="Enter your email address"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                />
                             </div>
 
                             {error && (
-                                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm flex items-center gap-2">
+                                <div className="bg-red-50 text-red-500 p-3 rounded-xl text-sm flex items-center gap-2 border border-red-100">
                                     <Icon name="alert-circle" size={16} /> {error}
                                 </div>
                             )}
@@ -140,26 +125,25 @@
                             <button 
                                 type="submit" 
                                 disabled={loading}
-                                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 transition-all flex justify-center items-center gap-2"
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-200 transition-all flex justify-center items-center gap-2"
                             >
-                                {loading ? 'Verifying...' : 'Login Now'} 
+                                {loading ? 'Searching...' : 'Search Details'} 
                                 {!loading && <Icon name="arrow-right" size={18} />}
                             </button>
                         </form>
 
                         <div className="mt-8 text-center pt-6 border-t border-slate-100">
-                            <p className="text-slate-400 text-xs mb-2">Don't have an account?</p>
-                            <button onClick={() => openWA("Hi, I want to buy a new subscription.")} className="text-indigo-600 font-bold text-sm hover:underline">
-                                Buy Subscription
+                            <p className="text-slate-400 text-xs mb-2">Want to buy a plan?</p>
+                            <button onClick={() => openWA("Hi, I want to buy a new subscription.")} className="text-blue-600 font-bold text-sm hover:underline flex items-center justify-center gap-1 w-full">
+                                Contact Sales <Icon name="external-link" size={14} />
                             </button>
                         </div>
                     </div>
                 );
             }
 
-            // --- VIEW 2: DASHBOARD SCREEN ---
+            // --- VIEW 2: DETAILS SCREEN ---
             
-            // Calculate Days Left
             const today = new Date();
             today.setHours(0,0,0,0);
             const expiryDate = new Date(user.expiry);
@@ -171,90 +155,82 @@
                 <div className="w-full fade-in pb-12">
                     
                     {/* Header */}
-                    <div className="flex justify-between items-center mb-6 px-2">
-                        <div>
-                            <p className="text-slate-400 text-xs font-bold uppercase tracking-wider">Welcome Back</p>
-                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                {user.name.split(' ')[0]} <Icon name="sparkles" size={16} className="text-yellow-500 fill-yellow-500" />
-                            </h2>
-                        </div>
-                        <button onClick={handleLogout} className="p-2 bg-white text-slate-400 rounded-full shadow-sm hover:text-red-500 transition">
-                            <Icon name="log-out" size={20} />
+                    <div className="flex justify-between items-center mb-6 px-1">
+                        <button onClick={clearSearch} className="flex items-center gap-2 text-slate-500 hover:text-slate-800 transition font-medium">
+                            <Icon name="arrow-left" size={18} /> Back
                         </button>
+                        <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full shadow-sm border border-slate-200">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                            <span className="text-xs font-bold text-slate-600">Verified</span>
+                        </div>
                     </div>
 
                     {/* Main Card */}
-                    <div className={`relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl mb-6 ${isExpired ? 'bg-gradient-to-br from-red-500 to-rose-600' : 'bg-gradient-to-br from-indigo-600 to-violet-600'}`}>
-                        {/* Background Circles */}
+                    <div className={`relative overflow-hidden rounded-3xl p-6 text-white shadow-2xl mb-6 ${isExpired ? 'bg-gradient-to-br from-slate-700 to-slate-900' : 'bg-gradient-to-br from-blue-600 to-indigo-600'}`}>
                         <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-white/10 rounded-full blur-2xl"></div>
-                        <div className="absolute bottom-0 left-0 -mb-10 -ml-10 w-40 h-40 bg-black/10 rounded-full blur-2xl"></div>
-
+                        
                         <div className="relative z-10">
-                            <div className="flex justify-between items-start mb-4">
-                                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${isExpired ? 'bg-red-800/30 border-red-400' : 'bg-indigo-400/30 border-indigo-300'}`}>
-                                    {isExpired ? 'Plan Expired' : 'Active Plan'}
+                            <div className="flex justify-between items-start mb-6">
+                                <div>
+                                    <p className="text-white/60 text-xs font-bold uppercase tracking-wider mb-1">Customer Name</p>
+                                    <h2 className="text-xl font-bold flex items-center gap-2">
+                                        {user.name} 
+                                    </h2>
                                 </div>
-                                <Icon name="crown" className="text-yellow-300 fill-yellow-300" />
+                                <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase border ${isExpired ? 'bg-red-500 border-red-400' : 'bg-green-500 border-green-400'}`}>
+                                    {isExpired ? 'Expired' : 'Active'}
+                                </div>
                             </div>
 
-                            <h3 className="text-3xl font-bold mb-1">{user.plan}</h3>
-                            <p className="text-white/80 text-sm mb-6 font-medium">Valid until {new Date(user.expiry).toLocaleDateString('en-IN')}</p>
-
-                            <div className="bg-black/20 backdrop-blur-md rounded-xl p-3 flex items-center gap-3 border border-white/10">
-                                <div className={`p-2 rounded-lg ${isExpired ? 'bg-red-500' : 'bg-emerald-500'}`}>
-                                    <Icon name="clock" size={18} className="text-white" />
+                            <div className="bg-black/20 rounded-2xl p-4 backdrop-blur-md border border-white/10">
+                                <div className="grid grid-cols-2 gap-4 border-b border-white/10 pb-4 mb-4">
+                                    <div>
+                                        <p className="text-[10px] text-white/60 uppercase">Current Plan</p>
+                                        <p className="font-bold text-lg">{user.plan}</p>
+                                    </div>
+                                    <div className="text-right">
+                                        <p className="text-[10px] text-white/60 uppercase">Expiry Date</p>
+                                        <p className="font-bold text-lg">{new Date(user.expiry).toLocaleDateString('en-IN')}</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-[10px] uppercase text-white/60 font-bold">Time Remaining</p>
-                                    <p className="font-bold text-sm">
-                                        {isExpired ? `${Math.abs(daysLeft)} Days Overdue` : `${daysLeft} Days Left`}
-                                    </p>
+                                <div className="flex items-center gap-3">
+                                    <Icon name="clock" size={18} className={isExpired ? "text-red-400" : "text-green-400"} />
+                                    <span className="text-sm font-medium">
+                                        {isExpired ? `${Math.abs(daysLeft)} Days Overdue` : `${daysLeft} Days Remaining`}
+                                    </span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Quick Actions */}
-                    <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-3 px-2">Quick Actions</p>
-                    
-                    <div className="space-y-3">
-                        {/* Payment Button */}
-                        <button onClick={() => setShowPay(true)} className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-green-50 text-green-600 p-3 rounded-xl">
-                                    <Icon name="wallet" />
-                                </div>
-                                <div className="text-left">
-                                    <h4 className="font-bold text-slate-700">Renew Subscription</h4>
-                                    <p className="text-xs text-slate-400">Make payment via UPI</p>
-                                </div>
+                    {/* Action Grid */}
+                    <div className="grid grid-cols-2 gap-3 mb-6">
+                        <button onClick={() => setShowPay(true)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:shadow-md transition group">
+                            <div className="w-10 h-10 bg-green-50 text-green-600 rounded-full flex items-center justify-center group-hover:scale-110 transition">
+                                <Icon name="refresh-cw" />
                             </div>
-                            <Icon name="chevron-right" className="text-slate-300 group-hover:text-indigo-500" />
+                            <span className="text-sm font-bold text-slate-700">Renew Plan</span>
                         </button>
 
-                        {/* Screenshot Button */}
-                        <button onClick={() => openWA(`Hi Team, sending payment screenshot for account: ${user.email}`)} className="w-full bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex items-center justify-between group hover:border-indigo-200 transition-all">
-                            <div className="flex items-center gap-4">
-                                <div className="bg-blue-50 text-blue-600 p-3 rounded-xl">
-                                    <Icon name="image" />
-                                </div>
-                                <div className="text-left">
-                                    <h4 className="font-bold text-slate-700">Send Screenshot</h4>
-                                    <p className="text-xs text-slate-400">Verify your payment</p>
-                                </div>
+                        <button onClick={() => openWA(`Payment Screenshot for: ${user.email}`)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col items-center justify-center gap-2 hover:border-blue-400 hover:shadow-md transition group">
+                            <div className="w-10 h-10 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center group-hover:scale-110 transition">
+                                <Icon name="image" />
                             </div>
-                            <Icon name="chevron-right" className="text-slate-300 group-hover:text-indigo-500" />
+                            <span className="text-sm font-bold text-slate-700">Send Proof</span>
                         </button>
+                    </div>
 
-                        {/* Support Grid */}
-                        <div className="grid grid-cols-2 gap-3 pt-2">
-                            <button onClick={() => openWA(`Hi, I need support regarding my plan (${user.email}).`)} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition">
-                                <Icon name="message-circle" className="text-green-500" />
-                                <span className="text-xs font-bold text-slate-600">WhatsApp</span>
+                    <div className="bg-white rounded-2xl p-4 shadow-sm border border-slate-200">
+                        <div className="flex items-center justify-between mb-4">
+                            <h3 className="font-bold text-slate-700 text-sm">Need Help?</h3>
+                            <span className="text-xs text-slate-400">Available 24/7</span>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={() => openWA(`Hi, I need support regarding my account (${user.email}).`)} className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition">
+                                <Icon name="message-circle" size={16} /> WhatsApp
                             </button>
-                            <a href={`tel:${SUPPORT_PHONE}`} className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col items-center justify-center gap-2 hover:bg-slate-50 transition">
-                                <Icon name="phone" className="text-indigo-500" />
-                                <span className="text-xs font-bold text-slate-600">Call Us</span>
+                            <a href={`tel:${SUPPORT_PHONE}`} className="flex-1 bg-slate-50 hover:bg-slate-100 text-slate-700 py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition">
+                                <Icon name="phone" size={16} /> Call Now
                             </a>
                         </div>
                     </div>
@@ -262,23 +238,29 @@
                     {/* PAYMENT MODAL */}
                     {showPay && (
                         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm fade-in">
-                            <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl">
-                                <div className="bg-slate-900 text-white p-6 text-center relative">
-                                    <button onClick={() => setShowPay(false)} className="absolute top-4 right-4 text-slate-400 hover:text-white"><Icon name="x" /></button>
-                                    <h3 className="text-lg font-bold">Scan & Pay</h3>
-                                    <p className="text-sm text-slate-400">Renew your {user.plan}</p>
-                                </div>
-                                <div className="p-8 flex flex-col items-center">
-                                    <div className="bg-white p-2 border-2 border-dashed border-slate-200 rounded-xl mb-4 shadow-inner">
-                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=CamvaPro&am=0`} alt="QR Code" className="w-48 h-48 rounded-lg" />
+                            <div className="bg-white w-full max-w-sm rounded-3xl overflow-hidden shadow-2xl relative">
+                                <button onClick={() => setShowPay(false)} className="absolute top-4 right-4 bg-slate-100 p-2 rounded-full text-slate-500 hover:bg-slate-200 transition"><Icon name="x" size={18} /></button>
+                                
+                                <div className="p-8 text-center">
+                                    <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                        <Icon name="qr-code" />
                                     </div>
-                                    <div className="bg-slate-100 px-4 py-2 rounded-lg text-xs font-mono text-slate-600 mb-6">
-                                        {UPI_ID}
+                                    <h3 className="text-xl font-bold text-slate-800">Scan & Pay</h3>
+                                    <p className="text-sm text-slate-500 mb-6">Renew your subscription instantly</p>
+                                    
+                                    <div className="bg-white p-2 border-2 border-dashed border-slate-200 rounded-2xl mb-6 inline-block">
+                                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=upi://pay?pa=${UPI_ID}&pn=CamvaPro&am=0`} alt="QR Code" className="w-48 h-48 rounded-xl" />
                                     </div>
                                     
-                                    <a href={`upi://pay?pa=${UPI_ID}&pn=CamvaPro`} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold flex justify-center items-center gap-2 hover:bg-indigo-700 transition">
-                                        Pay via UPI App <Icon name="external-link" size={16} />
-                                    </a>
+                                    <div className="space-y-3">
+                                        <div className="bg-slate-50 py-2 px-4 rounded-lg border border-slate-200 flex justify-between items-center">
+                                            <span className="text-xs text-slate-500 font-mono">{UPI_ID}</span>
+                                            <span className="text-xs font-bold text-green-600">UPI</span>
+                                        </div>
+                                        <a href={`upi://pay?pa=${UPI_ID}&pn=CamvaPro`} className="block w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition shadow-lg shadow-blue-200">
+                                            Open UPI App
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
                         </div>
