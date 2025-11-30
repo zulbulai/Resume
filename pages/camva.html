@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camva Pro | Ultimate CRM</title>
+    
+    <!-- 1. TAILWIND CSS (Design System) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 2. REACT (Frontend Framework) -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- 3. BABEL (JSX Compiler) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- 4. LUCIDE ICONS (Beautiful Icons) -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- 5. FONTS -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #f1f5f9; }
+        .glass-effect { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .sidebar-gradient { background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%); }
+        .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
+        
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        .animate-spin-slow { animation: spin 2s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        
+        .fade-in { animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        /*******************************************************
+         * CONFIGURATION (Backend URL)
+         *******************************************************/
+        const API_URL = "https://script.google.com/macros/s/AKfycbxhrlzHCsy3bC2jOzNXhGz4e6PUpADWP_r6_JQy1VMJA3Xa9JO_MXUV7EmB0zNUBnYm/exec";
+        
+        /*******************************************************
+         * PLANS CONFIGURATION
+         *******************************************************/
+        const PLANS = [
+            { id: 'monthly', name: 'Monthly Plan', price: 49, months: 1, color: 'text-blue-600 bg-blue-50' },
+            { id: 'quarterly', name: 'Quarterly Plan', price: 99, months: 3, color: 'text-purple-600 bg-purple-50' },
+            { id: 'annually', name: 'Annual Plan', price: 299, months: 12, color: 'text-amber-600 bg-amber-50' },
+            { id: 'annually_adv', name: 'Annual Advance', price: 499, months: 12, color: 'text-emerald-600 bg-emerald-50' },
+        ];
+
+        const { useState, useEffect, useMemo } = React;
+
+        // --- ICON WRAPPER ---
+        const Icon = ({ name, size = 20, className = "" }) => {
+            useEffect(() => { lucide.createIcons(); }, [name]);
+            return <i data-lucide={name} width={size} height={size} className={className}></i>;
+        };
+
+        // --- HELPERS ---
+        const formatDate = (d) => {
+            if(!d) return 'N/A';
+            return new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        };
+
+        const getDaysLeft = (expiry) => {
+            if(!expiry) return 0;
+            const today = new Date();
+            const exp = new Date(expiry);
+            today.setHours(0,0,0,0);
+            exp.setHours(0,0,0,0);
+            return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        };
+
+        const formatCurrency = (amount) => {
+            return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(amount);
+        };
+
+        // --- WHATSAPP UTILS ---
+        const openWA = (c, type) => {
+            const phone = "91" + c.phone.replace(/\D/g, '').slice(-10);
+            const name = c.name.split(' ')[0];
+            const date = formatDate(c.expiry);
+            let msg = "";
+
+            if (type === 'welcome') {
+                msg = `*Welcome to Camva Pro!* 🎨%0a%0aHi *${name}*,%0a🎉 Your subscription is *ACTIVE*.%0a📦 Plan: ${c.plan}%0a📅 Valid till: ${date}%0a%0aEnjoy Premium Access! ✨`;
+            } else if (type === 'reminder') {
+                const days = getDaysLeft(c.expiry);
+                msg = `*⚠️ EXPIRY ALERT*%0a%0aHi *${name}*,%0aYour plan expires in *${days} days* on *${date}*.%0a%0aRenew now to avoid blocking! 🚫%0a%0aReply to renew.`;
+            } else if (type === 'renewed') {
+                msg = `*✅ PAYMENT RECEIVED*%0a%0aThank you *${name}*!%0aPlan renewed successfully.%0a📅 New Expiry: ${date}%0a%0aKeep Creating! 🚀`;
+            } else {
+                msg = `*Status Update*%0aUser: ${c.name}%0aStatus: Active ✅%0aExpiry: ${date}`;
+            }
+            window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
+        };
+
+        // --- MAIN APP ---
+        const App = () => {
+            const [customers, setCustomers] = useState([]);
+            const [loading, setLoading] = useState(false);
+            const [view, setView] = useState('dashboard'); // dashboard, list, expired, week, add, import
+            const [search, setSearch] = useState('');
+            const [editData, setEditData] = useState(null);
+            const [renewData, setRenewData] = useState(null);
+
+            // Fetch Data
+            const refreshData = async () => {
+                setLoading(true);
+                try {
+                    const res = await fetch(API_URL);
+                    const json = await res.json();
+                    if(json.status === 'success') {
+                        setCustomers(json.data.sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp)));
+                    }
+                } catch (e) { alert("Network Error: Could not sync data."); } 
+                finally { setLoading(false); }
+            };
+
+            useEffect(() => { refreshData(); }, []);
+            useEffect(() => { lucide.createIcons(); }, [view, customers, renewData]);
+
+            // STATS CALCULATION
+            const stats = useMemo(() => {
+                const total = customers.length;
+                const active = customers.filter(c => getDaysLeft(c.expiry) >= 0).length;
+                const expired = total - active;
+                const thisWeek = customers.filter(c => {
+                    const d = getDaysLeft(c.expiry);
+                    return d >= 0 && d <= 7;
+                }).length;
+                const revenue = customers.reduce((acc, c) => acc + (Number(c.lifetime_value) || Number(c.payment) || 0), 0);
+                return { total, active, expired, thisWeek, revenue };
+            }, [customers]);
+
+            // FILTERED LIST
+            const filteredList = useMemo(() => {
+                let data = customers;
+                if(view === 'expired') data = data.filter(c => getDaysLeft(c.expiry) < 0);
+                if(view === 'week') data = data.filter(c => { const d = getDaysLeft(c.expiry); return d >= 0 && d <= 7; });
+                
+                return data.filter(c => 
+                    c.name.toLowerCase().includes(search.toLowerCase()) || 
+                    c.phone.includes(search) || 
+                    (c.team && c.team.toLowerCase().includes(search.toLowerCase()))
+                );
+            }, [customers, search, view]);
+
+            // ACTIONS
+            const handleRenew = async (planId) => {
+                const plan = PLANS.find(p => p.id === planId);
+                const today = new Date();
+                let start = new Date(renewData.expiry);
+                if(start < today) start = today;
+                start.setMonth(start.getMonth() + plan.months);
+                
+                const newExp = start.toISOString().split('T')[0];
+                const newRem = new Date(newExp); newRem.setDate(newRem.getDate()-3);
+                
+                // Optimistic Update
+                const updated = {
+                    ...renewData,
+                    plan: planId,
+                    expiry: newExp,
+                    status: 'Active',
+                    last_payment: plan.price,
+                    lifetime_value: (Number(renewData.lifetime_value) || 0) + plan.price
+                };
+                
+                setCustomers(prev => prev.map(c => c.id === renewData.id ? updated : c));
+                setRenewData(null);
+                openWA(updated, 'renewed'); // Open WA immediately
+
+                // Backend Sync
+                await fetch(API_URL, {
+                    method: 'POST',
+                    body: JSON.stringify({
+                        action: 'renew',
+                        data: {
+                            id: renewData.id,
+                            plan: planId,
+                            payment: plan.price,
+                            expiry: newExp,
+                            reminder: newRem.toISOString().split('T')[0]
+                        }
+                    })
+                });
+            };
+
+            return (
+                <div className="flex h-screen overflow-hidden text-slate-800">
+                    
+                    {/* SIDEBAR */}
+                    <aside className="w-72 sidebar-gradient text-white flex flex-col shadow-2xl z-20 hidden md:flex">
+                        <div className="p-6 border-b border-slate-700">
+                            <h1 className="text-2xl font-bold flex items-center gap-3">
+                                <Icon name="crown" className="text-yellow-400 fill-yellow-400" />
+                                Camva Pro
+                            </h1>
+                            <p className="text-xs text-slate-400 mt-1 ml-9">Premium CRM Dashboard</p>
+                        </div>
+
+                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                            <NavItem active={view==='dashboard'} onClick={()=>setView('dashboard')} icon="layout-dashboard" label="Dashboard" />
+                            <NavItem active={view==='list'} onClick={()=>setView('list')} icon="users" label="All Customers" />
+                            <NavItem active={view==='week'} onClick={()=>setView('week')} icon="calendar-clock" label="Expiring This Week" badge={stats.thisWeek} badgeColor="bg-orange-500" />
+                            <NavItem active={view==='expired'} onClick={()=>setView('expired')} icon="alert-octagon" label="Expired Plans" badge={stats.expired} badgeColor="bg-red-500" />
+                            
+                            <div className="pt-4 border-t border-slate-700 mt-4">
+                                <p className="text-xs font-bold text-slate-500 uppercase px-4 mb-2">Actions</p>
+                                <NavItem active={view==='add'} onClick={()=>{setEditData(null); setView('add');}} icon="user-plus" label="Add Customer" color="text-emerald-400" />
+                                <NavItem active={view==='import'} onClick={()=>{setEditData(null); setView('import');}} icon="upload-cloud" label="Import Data" color="text-blue-400" />
+                            </div>
+                        </nav>
+
+                        <div className="p-4 bg-slate-800/50">
+                            <button onClick={refreshData} disabled={loading} className={`w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 py-3 rounded-xl font-bold transition-all shadow-lg shadow-indigo-900/50 ${loading ? 'opacity-80 cursor-wait' : ''}`}>
+                                <Icon name="refresh-cw" className={loading ? "animate-spin" : ""} size={18} />
+                                {loading ? "Syncing..." : "Refresh Data"}
+                            </button>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTENT */}
+                    <main className="flex-1 flex flex-col relative overflow-hidden bg-[#f8fafc]">
+                        
+                        {/* MOBILE HEADER */}
+                        <div className="md:hidden bg-slate-900 text-white p-4 flex justify-between items-center shadow-md z-30">
+                            <span className="font-bold text-lg flex gap-2"><Icon name="crown" size={20} className="text-yellow-400" /> Camva Pro</span>
+                            <div className="flex gap-4">
+                                <button onClick={()=>setView('dashboard')}><Icon name="layout-grid" /></button>
+                                <button onClick={()=>{setEditData(null); setView('add')}}><Icon name="plus-circle" /></button>
+                                <button onClick={refreshData}><Icon name="refresh-cw" className={loading?"animate-spin":""} /></button>
+                            </div>
+                        </div>
+
+                        {/* DESKTOP HEADER */}
+                        <header className="hidden md:flex bg-white/80 backdrop-blur-md border-b border-slate-200 px-8 py-5 justify-between items-center sticky top-0 z-10">
+                            <div>
+                                <h2 className="text-2xl font-bold text-slate-800 capitalize">{view.replace('_', ' ')}</h2>
+                                <p className="text-sm text-slate-500">Welcome back, Admin</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-6 py-2 rounded-full shadow-lg shadow-indigo-200 flex items-center gap-3">
+                                    <div className="bg-white/20 p-1.5 rounded-full"><Icon name="indian-rupee" size={16} /></div>
+                                    <div>
+                                        <p className="text-[10px] font-bold uppercase opacity-80">Lifetime Revenue</p>
+                                        <p className="text-xl font-bold leading-none">{formatCurrency(stats.revenue)}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </header>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8">
+                            
+                            {/* DASHBOARD VIEW */}
+                            {view === 'dashboard' && (
+                                <div className="space-y-8 fade-in">
+                                    {/* Stats Grid */}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                                        <DashboardCard label="Total Customers" value={stats.total} icon="users" color="bg-blue-500" />
+                                        <DashboardCard label="Active Plans" value={stats.active} icon="check-circle" color="bg-emerald-500" />
+                                        <DashboardCard 
+                                            label="Expiring This Week" 
+                                            value={stats.thisWeek} 
+                                            icon="calendar-clock" 
+                                            color="bg-orange-500" 
+                                            onClick={()=>setView('week')} 
+                                            urgent={stats.thisWeek > 0}
+                                        />
+                                        <DashboardCard 
+                                            label="Expired Plans" 
+                                            value={stats.expired} 
+                                            icon="alert-octagon" 
+                                            color="bg-red-500" 
+                                            onClick={()=>setView('expired')} 
+                                            urgent={stats.expired > 0}
+                                        />
+                                    </div>
+
+                                    {/* Quick Action Banner */}
+                                    <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-200 flex flex-col md:flex-row justify-between items-center gap-6">
+                                        <div className="flex gap-6 items-center">
+                                            <div className="bg-indigo-100 p-4 rounded-2xl text-indigo-600">
+                                                <Icon name="rocket" size={32} />
+                                            </div>
+                                            <div>
+                                                <h3 className="text-xl font-bold text-slate-800">Ready to scale?</h3>
+                                                <p className="text-slate-500">Add new customers or import your old database.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex gap-3 w-full md:w-auto">
+                                            <button onClick={()=>{setEditData(null); setView('add')}} className="flex-1 md:flex-none px-6 py-3 bg-indigo-600 text-white rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-200">
+                                                Add New
+                                            </button>
+                                            <button onClick={()=>{setEditData(null); setView('import')}} className="flex-1 md:flex-none px-6 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition">
+                                                Import
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* LIST VIEWS */}
+                            {['list', 'expired', 'week'].includes(view) && (
+                                <div className="fade-in space-y-6">
+                                    {/* Search Bar */}
+                                    <div className="relative">
+                                        <div className="absolute left-4 top-3.5 text-slate-400"><Icon name="search" /></div>
+                                        <input 
+                                            type="text" 
+                                            placeholder="Search by Name, Phone, or Team..." 
+                                            className="w-full pl-12 pr-4 py-3 rounded-2xl border border-slate-200 focus:ring-4 focus:ring-indigo-100 focus:border-indigo-500 outline-none shadow-sm transition-all"
+                                            value={search}
+                                            onChange={e=>setSearch(e.target.value)}
+                                        />
+                                    </div>
+
+                                    {filteredList.length === 0 ? (
+                                        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-300">
+                                            <div className="text-slate-300 mb-4 flex justify-center"><Icon name="search-x" size={48} /></div>
+                                            <h3 className="text-lg font-bold text-slate-600">No customers found</h3>
+                                            <p className="text-slate-400">Try adjusting your filters.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                            {filteredList.map(c => (
+                                                <CustomerCard 
+                                                    key={c.id} 
+                                                    data={c} 
+                                                    onRenew={()=>setRenewData(c)}
+                                                    onEdit={()=>{setEditData(c); setView('add');}}
+                                                />
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* FORM VIEW */}
+                            {['add', 'import'].includes(view) && (
+                                <FormView 
+                                    mode={view} 
+                                    editData={editData} 
+                                    onCancel={()=>setView('list')} 
+                                    onSuccess={()=>{ refreshData(); setView('list'); }} 
+                                />
+                            )}
+                        </div>
+                    </main>
+
+                    {/* RENEW MODAL */}
+                    {renewData && (
+                        <div className="fixed inset-0 bg-slate-900/60 z-50 flex items-center justify-center p-4 backdrop-blur-sm fade-in">
+                            <div className="bg-white rounded-3xl shadow-2xl max-w-sm w-full overflow-hidden">
+                                <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                                    <div>
+                                        <p className="text-xs font-bold text-slate-500 uppercase">Renew Subscription</p>
+                                        <h3 className="font-bold text-xl text-slate-800">{renewData.name}</h3>
+                                    </div>
+                                    <button onClick={()=>setRenewData(null)} className="bg-white p-2 rounded-full shadow-sm hover:bg-slate-100"><Icon name="x" size={18} /></button>
+                                </div>
+                                <div className="p-6 space-y-3">
+                                    {PLANS.map(p => (
+                                        <button key={p.id} onClick={()=>handleRenew(p.id)} className="w-full group flex justify-between items-center p-4 rounded-xl border border-slate-200 hover:border-indigo-500 hover:bg-indigo-50 transition-all">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-4 h-4 rounded-full border-2 border-slate-300 group-hover:border-indigo-600`}></div>
+                                                <span className="font-semibold text-slate-600 group-hover:text-indigo-900">{p.name}</span>
+                                            </div>
+                                            <span className="font-bold text-indigo-600">₹{p.price}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        // --- COMPONENTS ---
+
+        const NavItem = ({ active, onClick, icon, label, badge, badgeColor, color }) => (
+            <button onClick={onClick} className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${active ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-900/40' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}>
+                <Icon name={icon} size={20} className={active ? 'text-white' : color || 'text-slate-500 group-hover:text-white'} />
+                <span className="font-medium flex-1 text-left">{label}</span>
+                {badge > 0 && <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full text-white ${badgeColor}`}>{badge}</span>}
+            </button>
+        );
+
+        const DashboardCard = ({ label, value, icon, color, onClick, urgent }) => (
+            <div onClick={onClick} className={`bg-white p-6 rounded-3xl card-shadow border border-slate-100 relative overflow-hidden group ${onClick ? 'cursor-pointer card-hover' : ''}`}>
+                <div className={`absolute top-0 right-0 p-24 rounded-full opacity-5 -mr-10 -mt-10 ${color}`}></div>
+                <div className="flex justify-between items-start relative z-10">
+                    <div>
+                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{label}</p>
+                        <h3 className="text-4xl font-extrabold text-slate-800">{value}</h3>
+                        {urgent && <p className="text-xs font-bold text-red-500 mt-2 flex items-center gap-1"><Icon name="alert-circle" size={12} /> Action Needed</p>}
+                    </div>
+                    <div className={`p-4 rounded-2xl text-white shadow-lg ${color}`}>
+                        <Icon name={icon} size={24} />
+                    </div>
+                </div>
+            </div>
+        );
+
+        const CustomerCard = ({ data, onRenew, onEdit }) => {
+            const daysLeft = getDaysLeft(data.expiry);
+            const isExpired = daysLeft < 0;
+            return (
+                <div className="bg-white rounded-3xl p-6 card-shadow border border-slate-100 card-hover transition-all group flex flex-col relative">
+                    {/* Status Badge */}
+                    <div className={`absolute top-6 right-6 px-3 py-1 rounded-full text-xs font-bold border ${isExpired ? 'bg-red-50 text-red-600 border-red-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100'}`}>
+                        {isExpired ? 'EXPIRED' : 'ACTIVE'}
+                    </div>
+
+                    <div className="mb-4">
+                        <h3 className="font-bold text-slate-800 text-lg group-hover:text-indigo-600 transition-colors">{data.name}</h3>
+                        <p className="text-sm font-medium text-slate-400 mt-1">{data.team || 'No Team'}</p>
+                    </div>
+
+                    <div className="space-y-3 mb-6 flex-1">
+                        <div className="flex items-center gap-3 text-sm text-slate-600 bg-slate-50 p-2 rounded-lg">
+                            <Icon name="calendar-clock" size={16} className="text-indigo-500" />
+                            <span className="font-medium">{isExpired ? `Expired ${Math.abs(daysLeft)} days ago` : `${daysLeft} days left`}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-500 px-2">
+                            <Icon name="smartphone" size={16} /> {data.phone}
+                        </div>
+                        <div className="flex items-center gap-3 text-sm text-slate-500 px-2">
+                            <Icon name="credit-card" size={16} /> Paid: <span className="text-slate-900 font-bold">₹{data.lifetime_value || data.payment || 0}</span>
+                        </div>
+                        {data.notes && (
+                            <div className="flex items-start gap-3 text-sm text-slate-500 px-2 mt-2 bg-yellow-50 p-2 rounded-lg border border-yellow-100">
+                                <Icon name="sticky-note" size={16} className="text-yellow-600 mt-0.5" />
+                                <span className="text-slate-700 italic">{data.notes}</span>
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 border-t border-slate-100 pt-4">
+                        <button onClick={()=>openWA(data, isExpired ? 'reminder' : 'status')} className="btn flex justify-center py-2.5 rounded-xl bg-green-50 text-green-600 hover:bg-green-100 transition"><Icon name="message-circle" /></button>
+                        <button onClick={onEdit} className="btn flex justify-center py-2.5 rounded-xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition"><Icon name="edit-3" /></button>
+                        <button onClick={onRenew} className="btn flex justify-center items-center gap-2 py-2.5 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition font-bold text-sm"><Icon name="refresh-cw" size={16} /> Renew</button>
+                    </div>
+                </div>
+            );
+        };
+
+        const FormView = ({ mode, editData, onCancel, onSuccess }) => {
+            const [form, setForm] = useState({ name:'', email:'', phone:'', team:'', plan:'monthly', joined: new Date().toISOString().split('T')[0], expiry:'', payment:49, notes: '' });
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if(editData) setForm({ 
+                    ...editData, 
+                    phone: editData.phone.replace(/\D/g,''), 
+                    joined: editData.joined?.split('T')[0], 
+                    expiry: editData.expiry?.split('T')[0],
+                    notes: editData.notes || '' 
+                });
+                else calcExpiry(new Date().toISOString().split('T')[0], 'monthly');
+            }, [editData]);
+
+            const calcExpiry = (dStr, pId) => {
+                const p = PLANS.find(x=>x.id===pId);
+                
+                // IMPORT FIX: In import mode, just update plan and price, respect manual join date
+                if(mode==='import') {
+                    setForm(prev => ({
+                        ...prev, 
+                        joined: dStr, 
+                        plan: pId, 
+                        payment: p.price
+                        // Note: We don't auto-set expiry in import mode so user can set it manually, 
+                        // OR if they change join date, they might want to manually change expiry too.
+                    }));
+                    return;
+                }
+
+                const d = new Date(dStr);
+                d.setMonth(d.getMonth() + p.months);
+                setForm(prev=>({...prev, joined:dStr, plan:pId, payment:p.price, expiry:d.toISOString().split('T')[0]}));
+            };
+
+            const handleSubmit = async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                const action = editData ? 'update' : 'add';
+                const payload = { ...form, id: editData?.id, reminder: new Date(new Date(form.expiry).setDate(new Date(form.expiry).getDate()-3)).toISOString().split('T')[0] };
+                try {
+                    await fetch(API_URL, { method:'POST', body: JSON.stringify({ action, data: payload }) });
+                    if(action==='add' && mode!=='import') openWA({ ...payload, plan: PLANS.find(x=>x.id===payload.plan).name }, 'welcome');
+                    onSuccess();
+                } catch(e) { alert("Error saving"); } finally { setLoading(false); }
+            };
+
+            return (
+                <div className="max-w-2xl mx-auto bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden fade-in">
+                    <div className="bg-slate-50 p-6 border-b border-slate-100 flex justify-between items-center">
+                        <div>
+                            <h2 className="text-xl font-bold text-slate-800">{editData ? 'Edit Details' : (mode==='import' ? 'Import Data' : 'New Customer')}</h2>
+                            <p className="text-sm text-slate-500">Fill in the information below</p>
+                        </div>
+                        <button onClick={onCancel} className="p-2 hover:bg-white rounded-full transition"><Icon name="x" /></button>
+                    </div>
+                    
+                    <form onSubmit={handleSubmit} className="p-8 space-y-6">
+                        <div className="grid grid-cols-2 gap-6">
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Full Name</label><input required className="w-full p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" value={form.name} onChange={e=>setForm({...form, name:e.target.value})} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Team Name</label><input className="w-full p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" value={form.team} onChange={e=>setForm({...form, team:e.target.value})} /></div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-6">
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Phone</label><input required type="tel" className="w-full p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" value={form.phone} onChange={e=>setForm({...form, phone:e.target.value})} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Email</label><input required type="email" className="w-full p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none" value={form.email} onChange={e=>setForm({...form, email:e.target.value})} /></div>
+                        </div>
+                        
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-3 block">Choose Plan</label>
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                {PLANS.map(p => (
+                                    <button type="button" key={p.id} onClick={()=>calcExpiry(form.joined, p.id)} className={`p-3 rounded-xl border text-center transition-all ${form.plan===p.id ? 'bg-indigo-600 text-white shadow-lg' : 'bg-white border-slate-200 hover:border-indigo-300'}`}>
+                                        <div className="text-[10px] uppercase font-bold opacity-80">{p.name.replace(' Plan','')}</div>
+                                        <div className="text-lg font-bold">₹{p.price}</div>
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-6">
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Joined</label><input type="date" className="w-full p-3 rounded-xl border border-slate-200" value={form.joined} onChange={e=>calcExpiry(e.target.value, form.plan)} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Expiry</label><input type="date" className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-500" readOnly={mode!=='import'} value={form.expiry} onChange={e=>setForm({...form, expiry:e.target.value})} /></div>
+                            <div><label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Paid</label><div className="w-full p-3 rounded-xl border border-slate-200 bg-slate-50 font-bold text-indigo-600">₹{form.payment}</div></div>
+                        </div>
+
+                        <div>
+                            <label className="text-xs font-bold text-slate-500 uppercase mb-2 block">Customer Notes</label>
+                            <textarea 
+                                className="w-full p-3 rounded-xl border border-slate-200 focus:border-indigo-500 outline-none h-24 resize-none" 
+                                placeholder="Add any specific notes here (e.g., Payment pending, VIP client...)"
+                                value={form.notes} 
+                                onChange={e=>setForm({...form, notes:e.target.value})} 
+                            />
+                        </div>
+
+                        <button disabled={loading} className="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold text-lg hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex justify-center gap-2 items-center">
+                            {loading && <Icon name="loader-2" className="animate-spin" />} {editData ? 'Update Customer' : 'Save & Activate'}
+                        </button>
+                    </form>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
