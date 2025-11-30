@@ -2,254 +2,328 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Expiring Customers | Camva Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Camva Pro | Action Center</title>
     
     <!-- LIBRARIES -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://unpkg.com/lucide@0.263.1/dist/umd/lucide.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <style>
-        body { font-family: 'Outfit', sans-serif; background-color: #111827; color: #f3f4f6; }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        body { font-family: 'Outfit', sans-serif; background-color: #f8fafc; -webkit-tap-highlight-color: transparent; }
         
-        /* Dark Card Style */
-        .dark-card {
-            background-color: #1f2937; /* gray-800 */
-            border: 1px solid #374151; /* gray-700 */
-        }
+        /* Animations */
+        .slide-up { animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .fade-in { animation: fadeIn 0.3s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="min-h-screen p-4 md:p-8 flex justify-center">
+<body class="bg-slate-50 text-slate-900 h-screen overflow-hidden">
 
-    <div id="root" class="w-full max-w-5xl"></div>
+    <div id="root" class="h-full w-full"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
-
-        // --- CONFIG ---
-        const API_URL = "https://script.google.com/macros/s/AKfycbwWKXiL6xWik0Pyw0SexXUAslugCMN-NXYFo-P-_BOhIWTFUtHRt6RZ6JmgMwseY-_O/exec";
+        // CONFIG
+        const API_URL = "https://script.google.com/macros/s/AKfycbyEv15qA-6DjcD54I-qt9aHbL6RmZo5_rSUO0KFaMw7NjGQw2c2WJv7WLd52YavIGOD/exec";
         const SUPPORT_PHONE = "+91 6387617678";
-        
-        // --- ICON COMPONENT ---
-        const Icon = ({ name, size=20, className="" }) => {
+
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // --- SAFE ICON COMPONENT ---
+        const Icon = ({ name, size = 20, className = "" }) => {
             const ref = useRef(null);
             useEffect(() => {
-                if (ref.current) {
-                    ref.current.innerHTML = '';
+                if (window.lucide && ref.current) {
+                    ref.current.innerHTML = ''; 
                     const i = document.createElement('i');
                     i.setAttribute('data-lucide', name);
                     i.setAttribute('width', size);
                     i.setAttribute('height', size);
-                    if(className) i.setAttribute('class', className);
+                    if (className) i.setAttribute('class', className);
                     ref.current.appendChild(i);
-                    lucide.createIcons({ root: ref.current });
+                    window.lucide.createIcons({ root: ref.current });
                 }
             }, [name, size, className]);
-            return <span ref={ref} className="inline-flex"></span>;
+            return <span ref={ref} className="inline-flex items-center justify-center"></span>;
         };
 
+        // --- HELPERS ---
+        const parseDate = (dStr) => {
+            if (!dStr) return new Date();
+            let d = new Date(dStr);
+            if (!isNaN(d.getTime())) return d;
+            const p = String(dStr).match(/(\d+)/g);
+            if (!p || p.length < 3) return new Date();
+            if (p[0].length === 4) return new Date(p[0], p[1]-1, p[2]);
+            if (p[2].length === 4) return new Date(p[2], p[1]-1, p[0]);
+            return new Date();
+        };
+
+        const getDaysLeft = (expiry) => {
+            const today = new Date(); today.setHours(0,0,0,0);
+            const exp = parseDate(expiry); exp.setHours(0,0,0,0);
+            return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+        };
+
+        const formatDate = (d) => {
+            const date = parseDate(d);
+            return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+        };
+
+        // --- APP ---
         const App = () => {
             const [customers, setCustomers] = useState([]);
             const [loading, setLoading] = useState(true);
+            const [search, setSearch] = useState('');
+            const [filter, setFilter] = useState('all');
+            const [selectedUser, setSelectedUser] = useState(null);
 
-            // Fetch Data
             useEffect(() => {
                 const fetchData = async () => {
                     try {
                         const res = await fetch(API_URL);
                         const json = await res.json();
-                        if(json.status === 'success') {
-                            setCustomers(json.data);
-                        }
-                    } catch (e) {
-                        console.error("Error fetching data:", e);
-                    } finally {
-                        setLoading(false);
-                    }
+                        if(json.status === 'success') setCustomers(json.data.reverse());
+                    } catch (e) { console.error(e); } finally { setLoading(false); }
                 };
                 fetchData();
             }, []);
 
-            // --- FILTER LOGIC (Expiring This Week) ---
-            const expiringCustomers = customers.filter(c => {
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const expiryDate = new Date(c.expiry);
-                expiryDate.setHours(0,0,0,0);
-                
-                // Calculate days left
-                const diffTime = expiryDate - today;
-                const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const filteredData = useMemo(() => {
+                return customers.filter(c => {
+                    const matchSearch = c.name.toLowerCase().includes(search.toLowerCase()) || String(c.phone).includes(search);
+                    if(!matchSearch) return false;
+                    const days = getDaysLeft(c.expiry);
+                    if(filter === 'expired') return days < 0;
+                    if(filter === 'urgent') return days >= 0 && days <= 7;
+                    if(filter === 'active') return days > 7;
+                    return true;
+                });
+            }, [customers, search, filter]);
 
-                // Return true if expiring in next 7 days OR already expired within last 3 days (for grace period)
-                return daysLeft >= -3 && daysLeft <= 7;
-            });
+            const counts = useMemo(() => {
+                const total = customers.length;
+                const expired = customers.filter(c => getDaysLeft(c.expiry) < 0).length;
+                const urgent = customers.filter(c => { const d = getDaysLeft(c.expiry); return d >= 0 && d <= 7 }).length;
+                const active = total - expired;
+                return { total, expired, urgent, active };
+            }, [customers]);
 
-            // --- HELPERS ---
-            const formatDate = (d) => {
-                if(!d) return '';
-                const date = new Date(d);
-                return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
-            };
-
-            const getDaysLeft = (expiry) => {
-                const today = new Date();
-                today.setHours(0,0,0,0);
-                const exp = new Date(expiry);
-                exp.setHours(0,0,0,0);
-                return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
-            };
-
-            // --- WHATSAPP GENERATOR ---
-            const sendWA = (user, templateId) => {
-                const name = user.name.split(' ')[0];
-                const plan = user.plan;
-                const expiry = formatDate(user.expiry);
-                const daysLeft = getDaysLeft(user.expiry);
-                
+            const sendMsg = (template) => {
+                if (!selectedUser) return;
+                const u = selectedUser;
+                const name = u.name.split(' ')[0];
+                const exp = formatDate(u.expiry);
+                const days = getDaysLeft(u.expiry);
                 let msg = "";
 
-                switch(templateId) {
-                    case 'reminder':
-                        msg = `⏰ *Subscription Reminder - ${name}*
-
-Your Canva Pro ${plan} subscription expires in *${daysLeft} days*.
-
-📅 Expiry Date: ${expiry}
-📦 Current Plan: ${plan}
-
-Renew now to avoid service interruption!
-
-Contact us to renew:
-📱 WhatsApp: ${SUPPORT_PHONE}`;
-                        break;
-
-                    case 'expired':
-                        msg = `⚠️ *Subscription Expired - ${name}*
-
-Your Canva Pro ${plan} subscription has expired on ${expiry}.
-
-🚫 Premium features are now locked.
-Renew now to restore full access!
-
-Contact us: ${SUPPORT_PHONE}`;
-                        break;
+                switch(template) {
+                    case 'welcome': msg = `🎉 *Welcome to Camva Pro, ${name}!*\n\nYour ${u.plan} subscription is now active.\n✅ Plan: ${u.plan}\n📅 Valid Until: ${exp}\n\nStart creating now! 🚀\n\nSupport: ${SUPPORT_PHONE}`; break;
+                    case 'start': msg = `🚀 *Subscription Activated - ${u.name}*\n\nYour Canva Pro ${u.plan} subscription is now live!\n\n📦 Plan: ${u.plan}\n📅 Valid Until: ${exp}\n✨ All features unlocked\n\nSupport: ${SUPPORT_PHONE}`; break;
+                    case 'renew': msg = `✅ *Subscription Renewed Successfully!*\n\nHi ${name}, great news! Your Camva Pro subscription has been renewed.\n\n🔄 New Plan: ${u.plan}\n📅 Valid Until: ${exp}\n\nQuestions? Contact: ${SUPPORT_PHONE}`; break;
+                    case 'reminder': msg = `⏰ *Subscription Reminder - ${name}*\n\nYour plan expires in *${days} days*.\n📅 Expiry: ${exp}\n📦 Plan: ${u.plan}\n\nRenew now to avoid service interruption!\n\nContact: ${SUPPORT_PHONE}`; break;
+                    case 'expired': msg = `⚠️ *Subscription Expired - ${name}*\n\nYour plan has expired on ${exp}.\n🚫 Premium features are locked.\n\nRenew now to restore full access.\nContact: ${SUPPORT_PHONE}`; break;
+                    case 'status': msg = `Hi ${name}!\n\nYour status update:\n✅ Account: ${days < 0 ? 'EXPIRED' : 'ACTIVE'}\n📦 Plan: ${u.plan}\n🎨 Access: Premium\n\nNeed help? Contact: ${SUPPORT_PHONE}`; break;
                 }
-
-                const phone = "91" + user.phone.replace(/\D/g, '').slice(-10);
+                const phone = "91" + String(u.phone).replace(/\D/g, '').slice(-10);
                 window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
             };
 
-            if (loading) {
-                return <div className="text-white text-center mt-20">Loading expiring customers...</div>;
-            }
+            if (loading) return (
+                <div className="h-screen w-full flex flex-col items-center justify-center bg-white text-indigo-600">
+                    <Icon name="loader-2" size={40} className="animate-spin mb-4" />
+                    <p className="text-sm font-bold tracking-widest uppercase">Loading Database...</p>
+                </div>
+            );
 
             return (
-                <div className="fade-in space-y-8">
+                <div className="flex flex-col h-full bg-slate-50 relative max-w-md mx-auto md:max-w-full md:flex-row shadow-2xl overflow-hidden">
                     
-                    <div className="flex items-center justify-between border-b border-gray-700 pb-6 mb-6">
-                        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-                            <Icon name="clock" className="text-orange-500" size={32} /> 
-                            Expiring This Week
-                        </h1>
-                        <span className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full font-bold">
-                            {expiringCustomers.length} Customers
-                        </span>
+                    {/* --- MAIN LIST VIEW --- */}
+                    <div className="flex-1 flex flex-col h-full overflow-hidden bg-white">
+                        
+                        {/* Header & Search */}
+                        <div className="px-5 pt-6 pb-2 bg-white sticky top-0 z-10">
+                            <div className="flex justify-between items-center mb-4">
+                                <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Action Center</h1>
+                                <div className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-full text-xs font-bold border border-indigo-100">
+                                    {filteredData.length}
+                                </div>
+                            </div>
+                            
+                            <div className="relative shadow-sm">
+                                <Icon name="search" className="absolute left-3 top-3 text-slate-400" size={18} />
+                                <input 
+                                    type="text" 
+                                    placeholder="Search name or phone..." 
+                                    className="w-full bg-slate-50 pl-10 pr-4 py-3 rounded-2xl border-none outline-none focus:ring-2 focus:ring-indigo-500 transition text-slate-700 font-medium"
+                                    value={search}
+                                    onChange={e => setSearch(e.target.value)}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Filter Pills */}
+                        <div className="px-5 py-2 flex gap-3 overflow-x-auto no-scrollbar sticky top-[100px] z-10 bg-white/95 backdrop-blur-sm pb-4 border-b border-slate-100">
+                            <FilterChip label="All" count={counts.total} active={filter==='all'} onClick={()=>setFilter('all')} />
+                            <FilterChip label="Urgent" count={counts.urgent} active={filter==='urgent'} onClick={()=>setFilter('urgent')} color="orange" />
+                            <FilterChip label="Expired" count={counts.expired} active={filter==='expired'} onClick={()=>setFilter('expired')} color="red" />
+                            <FilterChip label="Active" count={counts.active} active={filter==='active'} onClick={()=>setFilter('active')} color="green" />
+                        </div>
+
+                        {/* Customer List */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-24 bg-slate-50">
+                            {filteredData.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center h-64 text-slate-400">
+                                    <Icon name="search-x" size={48} className="mb-2 opacity-50" />
+                                    <p>No customers found.</p>
+                                </div>
+                            ) : (
+                                filteredData.map(user => {
+                                    const days = getDaysLeft(user.expiry);
+                                    const isExpired = days < 0;
+                                    
+                                    return (
+                                        <div 
+                                            key={user.id}
+                                            onClick={() => setSelectedUser(user)}
+                                            className={`bg-white p-4 rounded-2xl shadow-sm border border-slate-100 active:scale-95 transition-transform flex items-center gap-4 relative overflow-hidden ${isExpired ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-emerald-500'}`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${isExpired ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-500'}`}>
+                                                {user.name ? user.name.charAt(0) : 'U'}
+                                            </div>
+                                            <div className="flex-1">
+                                                <div className="flex justify-between items-start">
+                                                    <h3 className="font-bold text-slate-800">{user.name}</h3>
+                                                    {isExpired ? 
+                                                        <span className="text-[10px] font-bold bg-red-100 text-red-600 px-2 py-0.5 rounded">EXP</span> : 
+                                                        <span className="text-[10px] font-bold bg-emerald-100 text-emerald-600 px-2 py-0.5 rounded">{days} Days</span>
+                                                    }
+                                                </div>
+                                                <div className="flex gap-3 text-xs text-slate-500 mt-1">
+                                                    <span className="flex items-center gap-1"><Icon name="box" size={12}/> {user.plan}</span>
+                                                    <span className="flex items-center gap-1"><Icon name="calendar" size={12}/> {formatDate(user.expiry)}</span>
+                                                </div>
+                                            </div>
+                                            <Icon name="chevron-right" className="text-slate-300" />
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
                     </div>
 
-                    {expiringCustomers.length === 0 ? (
-                        <div className="text-center py-20 text-gray-500">
-                            <Icon name="check-circle" size={48} className="mb-4 mx-auto text-green-500" />
-                            <p className="text-xl">No subscriptions expiring this week!</p>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-8">
-                            {expiringCustomers.map((user) => {
-                                const daysLeft = getDaysLeft(user.expiry);
-                                const isExpired = daysLeft < 0;
-
-                                return (
-                                    <div key={user.id} className="dark-card rounded-2xl p-6 relative overflow-hidden shadow-2xl flex flex-col md:flex-row gap-6">
-                                        
-                                        {/* Status Badge */}
-                                        <div className="absolute top-0 right-0 p-4">
-                                            {isExpired ? (
-                                                <span className="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase">Expired</span>
-                                            ) : (
-                                                <span className="bg-orange-500/20 text-orange-400 border border-orange-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase">{daysLeft} Days Left</span>
-                                            )}
+                    {/* --- BOTTOM SHEET (MESSAGE ACTIONS) --- */}
+                    {selectedUser && (
+                        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center">
+                            {/* Overlay */}
+                            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm fade-in" onClick={() => setSelectedUser(null)}></div>
+                            
+                            {/* Sheet Content */}
+                            <div className="relative bg-white w-full max-w-md sm:rounded-2xl rounded-t-3xl shadow-2xl slide-up overflow-hidden max-h-[85vh] flex flex-col">
+                                
+                                {/* Sheet Header */}
+                                <div className="p-6 pb-4 border-b border-slate-100 bg-white sticky top-0 z-10">
+                                    <div className="w-12 h-1 bg-slate-200 rounded-full mx-auto mb-4"></div>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-slate-800">{selectedUser.name}</h2>
+                                            <p className="text-sm text-slate-500 flex items-center gap-2 mt-1">
+                                                <Icon name="phone" size={14}/> {selectedUser.phone}
+                                            </p>
                                         </div>
-
-                                        {/* Left Side: Customer Info */}
-                                        <div className="flex-1">
-                                            <div className="flex items-start gap-4 mb-6">
-                                                <div className="w-14 h-14 rounded-xl bg-gray-700 flex items-center justify-center text-gray-400">
-                                                    <Icon name="user" size={28} />
-                                                </div>
-                                                <div>
-                                                    <h2 className="text-2xl font-bold text-white">{user.name}</h2>
-                                                    <div className="flex flex-col gap-1 mt-1 text-gray-400 text-sm">
-                                                        <span className="flex items-center gap-2"><Icon name="phone" size={12} /> {user.phone}</span>
-                                                        <span className="flex items-center gap-2"><Icon name="calendar" size={12} /> Exp: {formatDate(user.expiry)}</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-400 border-t border-gray-700 pt-4">
-                                                <p>Plan: <span className="text-white capitalize">{user.plan}</span></p>
-                                                <p>Team: <span className="text-white">{user.team}</span></p>
-                                            </div>
-                                        </div>
-
-                                        {/* Right Side: Quick Templates for this specific user */}
-                                        <div className="md:w-1/2 flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-700 pt-4 md:pt-0 md:pl-6 gap-3">
-                                            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Quick Actions</p>
-                                            
-                                            {isExpired ? (
-                                                <button 
-                                                    onClick={() => sendWA(user, 'expired')}
-                                                    className="w-full bg-red-900/30 hover:bg-red-900/50 border border-red-800 text-red-200 py-3 px-4 rounded-xl flex items-center justify-between group transition"
-                                                >
-                                                    <span className="flex items-center gap-2"><Icon name="alert-triangle" size={18} /> Send "Expired" Alert</span>
-                                                    <Icon name="send" size={16} className="opacity-50 group-hover:opacity-100" />
-                                                </button>
-                                            ) : (
-                                                <button 
-                                                    onClick={() => sendWA(user, 'reminder')}
-                                                    className="w-full bg-orange-900/30 hover:bg-orange-900/50 border border-orange-800 text-orange-200 py-3 px-4 rounded-xl flex items-center justify-between group transition"
-                                                >
-                                                    <span className="flex items-center gap-2"><Icon name="clock" size={18} /> Send "Reminder"</span>
-                                                    <Icon name="send" size={16} className="opacity-50 group-hover:opacity-100" />
-                                                </button>
-                                            )}
-                                            
-                                            {/* General Message (Status) */}
-                                            <button 
-                                                onClick={() => {
-                                                    const msg = `Hi ${user.name.split(' ')[0]}, your plan expires on ${formatDate(user.expiry)}. Please renew.`;
-                                                    const phone = "91" + user.phone.replace(/\D/g, '').slice(-10);
-                                                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
-                                                }}
-                                                className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 px-4 rounded-xl flex items-center justify-between group transition"
-                                            >
-                                                <span className="flex items-center gap-2"><Icon name="message-circle" size={18} /> Custom Chat</span>
-                                                <Icon name="external-link" size={16} className="opacity-50 group-hover:opacity-100" />
-                                            </button>
-                                        </div>
-
+                                        <button onClick={() => setSelectedUser(null)} className="p-2 bg-slate-100 rounded-full hover:bg-slate-200 transition">
+                                            <Icon name="x" size={20} className="text-slate-600" />
+                                        </button>
                                     </div>
-                                );
-                            })}
+                                </div>
+
+                                {/* Templates Grid */}
+                                <div className="p-6 overflow-y-auto bg-slate-50 flex-1">
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Select Message</p>
+                                    
+                                    {/* FIX: Using Solid Colors + White Text 
+                                      to ensure visibility against any background 
+                                    */}
+                                    <div className="grid grid-cols-2 gap-3 mb-6">
+                                        <TemplateBtn title="Welcome" icon="sparkles" color="blue" onClick={() => sendMsg('welcome')} />
+                                        <TemplateBtn title="Activated" icon="rocket" color="purple" onClick={() => sendMsg('start')} />
+                                        <TemplateBtn title="Renewed" icon="check-circle" color="green" onClick={() => sendMsg('renew')} />
+                                        <TemplateBtn title="Status" icon="info" color="cyan" onClick={() => sendMsg('status')} />
+                                    </div>
+
+                                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-4">Priority Actions</p>
+                                    <div className="space-y-3">
+                                        <button onClick={() => sendMsg('reminder')} className="w-full bg-white p-4 rounded-xl border border-orange-200 shadow-sm flex items-center justify-between active:scale-[0.98] transition group hover:bg-orange-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-orange-100 text-orange-600 p-2 rounded-lg"><Icon name="clock" /></div>
+                                                <div className="text-left">
+                                                    <h4 className="font-bold text-slate-800 text-sm">Send Expiry Reminder</h4>
+                                                    <p className="text-xs text-slate-500">Urgent action required</p>
+                                                </div>
+                                            </div>
+                                            <Icon name="chevron-right" className="text-slate-300 group-hover:text-orange-500" />
+                                        </button>
+
+                                        <button onClick={() => sendMsg('expired')} className="w-full bg-white p-4 rounded-xl border border-red-200 shadow-sm flex items-center justify-between active:scale-[0.98] transition group hover:bg-red-50">
+                                            <div className="flex items-center gap-3">
+                                                <div className="bg-red-100 text-red-600 p-2 rounded-lg"><Icon name="alert-triangle" /></div>
+                                                <div className="text-left">
+                                                    <h4 className="font-bold text-slate-800 text-sm">Send Expired Alert</h4>
+                                                    <p className="text-xs text-slate-500">Plan has ended</p>
+                                                </div>
+                                            </div>
+                                            <Icon name="chevron-right" className="text-slate-300 group-hover:text-red-500" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     )}
-
                 </div>
+            );
+        };
+
+        // --- SUB COMPONENTS ---
+        const FilterChip = ({ label, count, active, onClick, color }) => {
+            const activeClass = color === 'red' ? 'bg-red-600 text-white shadow-red-200' : 
+                                color === 'orange' ? 'bg-orange-500 text-white shadow-orange-200' :
+                                color === 'green' ? 'bg-emerald-600 text-white shadow-emerald-200' :
+                                'bg-slate-900 text-white shadow-slate-300';
+            
+            return (
+                <button 
+                    onClick={onClick}
+                    className={`flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-bold whitespace-nowrap transition-all shadow-sm active:scale-95 ${active ? activeClass : 'bg-white text-slate-500 border border-slate-200'}`}
+                >
+                    {label} <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${active ? 'bg-white/20' : 'bg-slate-100 text-slate-600'}`}>{count}</span>
+                </button>
+            );
+        };
+
+        // FIXED: Using Solid Colors & White Text for maximum visibility
+        const TemplateBtn = ({ title, icon, color, onClick }) => {
+            const colors = { 
+                blue: 'bg-blue-600 hover:bg-blue-700', 
+                purple: 'bg-purple-600 hover:bg-purple-700', 
+                green: 'bg-emerald-600 hover:bg-emerald-700', 
+                cyan: 'bg-cyan-600 hover:bg-cyan-700' 
+            };
+            
+            return (
+                <button onClick={onClick} className={`flex flex-col items-center justify-center gap-2 p-4 rounded-2xl transition active:scale-95 text-white shadow-lg ${colors[color]}`}>
+                    <Icon name={icon} size={24} />
+                    <span className="text-xs font-bold uppercase tracking-wide">{title}</span>
+                </button>
             );
         };
 
@@ -258,3 +332,5 @@ Contact us: ${SUPPORT_PHONE}`;
     </script>
 </body>
 </html>
+
+
