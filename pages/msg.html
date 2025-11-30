@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expiring Customers | Camva Pro</title>
+    
+    <!-- LIBRARIES -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: #111827; color: #f3f4f6; }
+        .fade-in { animation: fadeIn 0.5s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Dark Card Style */
+        .dark-card {
+            background-color: #1f2937; /* gray-800 */
+            border: 1px solid #374151; /* gray-700 */
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex justify-center">
+
+    <div id="root" class="w-full max-w-5xl"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- CONFIG ---
+        const API_URL = "https://script.google.com/macros/s/AKfycbwWKXiL6xWik0Pyw0SexXUAslugCMN-NXYFo-P-_BOhIWTFUtHRt6RZ6JmgMwseY-_O/exec";
+        const SUPPORT_PHONE = "+91 6387617678";
+        
+        // --- ICON COMPONENT ---
+        const Icon = ({ name, size=20, className="" }) => {
+            const ref = useRef(null);
+            useEffect(() => {
+                if (ref.current) {
+                    ref.current.innerHTML = '';
+                    const i = document.createElement('i');
+                    i.setAttribute('data-lucide', name);
+                    i.setAttribute('width', size);
+                    i.setAttribute('height', size);
+                    if(className) i.setAttribute('class', className);
+                    ref.current.appendChild(i);
+                    lucide.createIcons({ root: ref.current });
+                }
+            }, [name, size, className]);
+            return <span ref={ref} className="inline-flex"></span>;
+        };
+
+        const App = () => {
+            const [customers, setCustomers] = useState([]);
+            const [loading, setLoading] = useState(true);
+
+            // Fetch Data
+            useEffect(() => {
+                const fetchData = async () => {
+                    try {
+                        const res = await fetch(API_URL);
+                        const json = await res.json();
+                        if(json.status === 'success') {
+                            setCustomers(json.data);
+                        }
+                    } catch (e) {
+                        console.error("Error fetching data:", e);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                fetchData();
+            }, []);
+
+            // --- FILTER LOGIC (Expiring This Week) ---
+            const expiringCustomers = customers.filter(c => {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const expiryDate = new Date(c.expiry);
+                expiryDate.setHours(0,0,0,0);
+                
+                // Calculate days left
+                const diffTime = expiryDate - today;
+                const daysLeft = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                // Return true if expiring in next 7 days OR already expired within last 3 days (for grace period)
+                return daysLeft >= -3 && daysLeft <= 7;
+            });
+
+            // --- HELPERS ---
+            const formatDate = (d) => {
+                if(!d) return '';
+                const date = new Date(d);
+                return `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`;
+            };
+
+            const getDaysLeft = (expiry) => {
+                const today = new Date();
+                today.setHours(0,0,0,0);
+                const exp = new Date(expiry);
+                exp.setHours(0,0,0,0);
+                return Math.ceil((exp - today) / (1000 * 60 * 60 * 24));
+            };
+
+            // --- WHATSAPP GENERATOR ---
+            const sendWA = (user, templateId) => {
+                const name = user.name.split(' ')[0];
+                const plan = user.plan;
+                const expiry = formatDate(user.expiry);
+                const daysLeft = getDaysLeft(user.expiry);
+                
+                let msg = "";
+
+                switch(templateId) {
+                    case 'reminder':
+                        msg = `⏰ *Subscription Reminder - ${name}*
+
+Your Canva Pro ${plan} subscription expires in *${daysLeft} days*.
+
+📅 Expiry Date: ${expiry}
+📦 Current Plan: ${plan}
+
+Renew now to avoid service interruption!
+
+Contact us to renew:
+📱 WhatsApp: ${SUPPORT_PHONE}`;
+                        break;
+
+                    case 'expired':
+                        msg = `⚠️ *Subscription Expired - ${name}*
+
+Your Canva Pro ${plan} subscription has expired on ${expiry}.
+
+🚫 Premium features are now locked.
+Renew now to restore full access!
+
+Contact us: ${SUPPORT_PHONE}`;
+                        break;
+                }
+
+                const phone = "91" + user.phone.replace(/\D/g, '').slice(-10);
+                window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+            };
+
+            if (loading) {
+                return <div className="text-white text-center mt-20">Loading expiring customers...</div>;
+            }
+
+            return (
+                <div className="fade-in space-y-8">
+                    
+                    <div className="flex items-center justify-between border-b border-gray-700 pb-6 mb-6">
+                        <h1 className="text-3xl font-bold text-white flex items-center gap-3">
+                            <Icon name="clock" className="text-orange-500" size={32} /> 
+                            Expiring This Week
+                        </h1>
+                        <span className="bg-gray-800 text-gray-300 px-4 py-2 rounded-full font-bold">
+                            {expiringCustomers.length} Customers
+                        </span>
+                    </div>
+
+                    {expiringCustomers.length === 0 ? (
+                        <div className="text-center py-20 text-gray-500">
+                            <Icon name="check-circle" size={48} className="mb-4 mx-auto text-green-500" />
+                            <p className="text-xl">No subscriptions expiring this week!</p>
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-8">
+                            {expiringCustomers.map((user) => {
+                                const daysLeft = getDaysLeft(user.expiry);
+                                const isExpired = daysLeft < 0;
+
+                                return (
+                                    <div key={user.id} className="dark-card rounded-2xl p-6 relative overflow-hidden shadow-2xl flex flex-col md:flex-row gap-6">
+                                        
+                                        {/* Status Badge */}
+                                        <div className="absolute top-0 right-0 p-4">
+                                            {isExpired ? (
+                                                <span className="bg-red-500/20 text-red-400 border border-red-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase">Expired</span>
+                                            ) : (
+                                                <span className="bg-orange-500/20 text-orange-400 border border-orange-500/50 px-3 py-1 rounded-full text-xs font-bold uppercase">{daysLeft} Days Left</span>
+                                            )}
+                                        </div>
+
+                                        {/* Left Side: Customer Info */}
+                                        <div className="flex-1">
+                                            <div className="flex items-start gap-4 mb-6">
+                                                <div className="w-14 h-14 rounded-xl bg-gray-700 flex items-center justify-center text-gray-400">
+                                                    <Icon name="user" size={28} />
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-2xl font-bold text-white">{user.name}</h2>
+                                                    <div className="flex flex-col gap-1 mt-1 text-gray-400 text-sm">
+                                                        <span className="flex items-center gap-2"><Icon name="phone" size={12} /> {user.phone}</span>
+                                                        <span className="flex items-center gap-2"><Icon name="calendar" size={12} /> Exp: {formatDate(user.expiry)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-400 border-t border-gray-700 pt-4">
+                                                <p>Plan: <span className="text-white capitalize">{user.plan}</span></p>
+                                                <p>Team: <span className="text-white">{user.team}</span></p>
+                                            </div>
+                                        </div>
+
+                                        {/* Right Side: Quick Templates for this specific user */}
+                                        <div className="md:w-1/2 flex flex-col justify-center border-t md:border-t-0 md:border-l border-gray-700 pt-4 md:pt-0 md:pl-6 gap-3">
+                                            <p className="text-xs font-bold text-gray-500 uppercase mb-1">Quick Actions</p>
+                                            
+                                            {isExpired ? (
+                                                <button 
+                                                    onClick={() => sendWA(user, 'expired')}
+                                                    className="w-full bg-red-900/30 hover:bg-red-900/50 border border-red-800 text-red-200 py-3 px-4 rounded-xl flex items-center justify-between group transition"
+                                                >
+                                                    <span className="flex items-center gap-2"><Icon name="alert-triangle" size={18} /> Send "Expired" Alert</span>
+                                                    <Icon name="send" size={16} className="opacity-50 group-hover:opacity-100" />
+                                                </button>
+                                            ) : (
+                                                <button 
+                                                    onClick={() => sendWA(user, 'reminder')}
+                                                    className="w-full bg-orange-900/30 hover:bg-orange-900/50 border border-orange-800 text-orange-200 py-3 px-4 rounded-xl flex items-center justify-between group transition"
+                                                >
+                                                    <span className="flex items-center gap-2"><Icon name="clock" size={18} /> Send "Reminder"</span>
+                                                    <Icon name="send" size={16} className="opacity-50 group-hover:opacity-100" />
+                                                </button>
+                                            )}
+                                            
+                                            {/* General Message (Status) */}
+                                            <button 
+                                                onClick={() => {
+                                                    const msg = `Hi ${user.name.split(' ')[0]}, your plan expires on ${formatDate(user.expiry)}. Please renew.`;
+                                                    const phone = "91" + user.phone.replace(/\D/g, '').slice(-10);
+                                                    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`, '_blank');
+                                                }}
+                                                className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 py-3 px-4 rounded-xl flex items-center justify-between group transition"
+                                            >
+                                                <span className="flex items-center gap-2"><Icon name="message-circle" size={18} /> Custom Chat</span>
+                                                <Icon name="external-link" size={16} className="opacity-50 group-hover:opacity-100" />
+                                            </button>
+                                        </div>
+
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
