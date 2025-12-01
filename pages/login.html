@@ -31,11 +31,37 @@
         const SUPPORT_PHONE = "916387617678"; 
         const UPI_ID = "canvapro@upi";
 
-        const { useState, useEffect } = React;
+        const { useState, useEffect, useRef } = React;
 
+        // FIXED ICON COMPONENT
+        // This wrapper prevents the "NotFoundError" by isolating DOM manipulation
         const Icon = ({ name, size=20, className="" }) => {
-            useEffect(() => lucide.createIcons(), [name]);
-            return <i data-lucide={name} width={size} height={size} className={className}></i>;
+            const ref = useRef(null);
+
+            useEffect(() => {
+                if (!ref.current) return;
+
+                // 1. Create the base element for Lucide to find
+                const iconElement = document.createElement('i');
+                iconElement.setAttribute('data-lucide', name);
+                iconElement.setAttribute('width', size);
+                iconElement.setAttribute('height', size);
+                if (className) iconElement.setAttribute('class', className);
+
+                // 2. Clear the container and append the new element
+                ref.current.innerHTML = '';
+                ref.current.appendChild(iconElement);
+
+                // 3. Tell Lucide to transform <i> to <svg> only inside this container
+                if (window.lucide) {
+                    window.lucide.createIcons({
+                        root: ref.current
+                    });
+                }
+            }, [name, size, className]);
+
+            // React manages this span, Lucide manages what's inside it
+            return <span ref={ref} className="inline-flex items-center justify-center"></span>;
         };
 
         const App = () => {
