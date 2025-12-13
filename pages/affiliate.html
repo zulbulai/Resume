@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>⚡ Multi-Button Poster</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <style>
+        :root { --primary: #4F46E5; --bg: #F3F4F6; --card-bg: #ffffff; --text: #1F2937; --border: #E5E7EB; --wa: #25D366; --tg: #229ED9; }
+        body { font-family: 'Inter', sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
+        .main-container { max-width: 500px; width: 100%; background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        
+        h2 { text-align: center; margin-top: 0; color: #111827; }
+        .input-group { margin-bottom: 15px; }
+        label { display: block; font-size: 13px; font-weight: 600; color: #4B5563; margin-bottom: 6px; }
+        input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+        
+        /* Multi Button Styles */
+        .btn-container { border: 1px dashed var(--border); padding: 15px; border-radius: 10px; background: #f9fafb; }
+        .btn-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
+        .btn-row input { flex: 1; font-size: 13px; }
+        .remove-btn { color: #EF4444; background: none; border: none; cursor: pointer; font-size: 16px; }
+        
+        .add-btn { background: #EEF2FF; color: var(--primary); border: 1px dashed var(--primary); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
+        .add-btn:hover { background: #E0E7FF; }
+
+        /* Action Buttons */
+        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-wa { background: var(--wa); }
+        .btn-tg { background: var(--tg); }
+        
+        #imgPreview { width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; background: #fff; display: none; border: 1px solid #eee; }
+    </style>
+</head>
+<body>
+
+<div class="main-container">
+    <h2>🚀 Deal Poster Pro</h2>
+
+    <div class="input-group">
+        <label>Telegram Channel (@username)</label>
+        <input type="text" id="channelId" placeholder="@MySmartDispense" value="@MySmartDispense">
+    </div>
+
+    <div class="input-group">
+        <label>Product Image URL</label>
+        <input type="text" id="imgUrl" placeholder="Paste Image Link" oninput="showPreview()">
+        <img id="imgPreview">
+    </div>
+
+    <div class="input-group">
+        <label>Product Title</label>
+        <input type="text" id="title" placeholder="e.g. Samsung Galaxy M14">
+    </div>
+
+    <div style="display: flex; gap:10px;">
+        <div class="input-group" style="flex:1">
+            <label>Offer Price (₹)</label>
+            <input type="number" id="price" placeholder="299">
+        </div>
+        <div class="input-group" style="flex:1">
+            <label>MRP (₹)</label>
+            <input type="number" id="mrp" placeholder="999">
+        </div>
+    </div>
+
+    <div class="input-group">
+        <label>Buy Buttons <span style="font-weight:400; color:#888;">(Add as many as you want)</span></label>
+        <div class="btn-container" id="buttonList">
+            <div class="btn-row">
+                <input type="text" class="btn-name" placeholder="Name (e.g. Amazon)" value="Buy Now">
+                <input type="text" class="btn-link" placeholder="Affiliate Link">
+            </div>
+        </div>
+        <button class="add-btn" onclick="addNewButton()">+ Add Another Button</button>
+    </div>
+
+    <div class="action-buttons">
+        <button class="btn btn-wa" onclick="postToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
+        <button class="btn btn-tg" id="tgBtn" onclick="postToTelegram()">
+            <span id="tgText"><i class="fa-regular fa-paper-plane"></i> Send to Telegram</span>
+        </button>
+    </div>
+</div>
+
+<script>
+    // ✅ Updated with YOUR NEW URL
+    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziqREWOtFN84fRXVtwwdvVb7Mm7Ci6Ls5gxP9zu3igrLlDdT8LAAqZZHPKhP6Uxxlt9w/exec";
+
+    // 1. Image Preview
+    function showPreview() {
+        const url = document.getElementById('imgUrl').value;
+        const img = document.getElementById('imgPreview');
+        if(url) { img.src = url; img.style.display = 'block'; }
+    }
+
+    // 2. Add New Button Logic
+    function addNewButton() {
+        const container = document.getElementById('buttonList');
+        const div = document.createElement('div');
+        div.className = 'btn-row';
+        div.innerHTML = `
+            <input type="text" class="btn-name" placeholder="Name (e.g. Flipkart)">
+            <input type="text" class="btn-link" placeholder="Link">
+            <button class="remove-btn" onclick="this.parentElement.remove()"><i class="fa-solid fa-trash"></i></button>
+        `;
+        container.appendChild(div);
+    }
+
+    // 3. Generate Caption
+    function getCaption() {
+        const title = document.getElementById('title').value;
+        const price = document.getElementById('price').value;
+        const mrp = document.getElementById('mrp').value;
+        let discount = "";
+        if(mrp && price && Number(mrp) > Number(price)) {
+            discount = `(${Math.round(((mrp - price)/mrp)*100)}% OFF)`;
+        }
+        return `<b>🔥 Today's Best Deal</b>\n\n<b>${title}</b>\n\n💰 <b>Price: ₹${price}</b> ${discount}\n❌ <strike>MRP: ₹${mrp}</strike>\n\n<i>Limited Time Offer! ⏳</i>`;
+    }
+
+    // 4. Post to WhatsApp (Takes first link)
+    function postToWhatsApp() {
+        const title = document.getElementById('title').value;
+        const price = document.getElementById('price').value;
+        const firstLink = document.querySelector('.btn-link').value; 
+        
+        if(!firstLink) { Swal.fire('Error', 'Please add at least one link', 'error'); return; }
+        
+        const text = `🔥 *Loot Deal!* 🔥\n\n*${title}*\n💰 ₹${price}\n\n👉 *Buy Now:* ${firstLink}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+    }
+
+    // 5. Post to Telegram (Multi Button)
+    function postToTelegram() {
+        const btn = document.getElementById('tgBtn');
+        const channelId = document.getElementById('channelId').value;
+        const imgUrl = document.getElementById('imgUrl').value;
+        const title = document.getElementById('title').value;
+        
+        // Collect all buttons
+        let buttons = [];
+        document.querySelectorAll('.btn-row').forEach(row => {
+            let name = row.querySelector('.btn-name').value;
+            let link = row.querySelector('.btn-link').value;
+            if(name && link) buttons.push({ text: name, url: link });
+        });
+
+        if(!channelId || !imgUrl || buttons.length === 0) {
+            Swal.fire('Missing Info', 'Check Channel ID, Image and at least 1 Link.', 'warning');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = "Sending...";
+
+        fetch(GOOGLE_SCRIPT_URL, {
+            method: 'POST',
+            body: JSON.stringify({
+                channelId: channelId,
+                imageUrl: imgUrl,
+                caption: getCaption(),
+                buttons: buttons // Sending Array of buttons
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.status === 'success') {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success!',
+                    text: 'Posted with Multiple Buttons!',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            } else {
+                Swal.fire('Failed', data.message, 'error');
+            }
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fa-regular fa-paper-plane"></i> Send to Telegram`;
+        })
+        .catch(err => {
+            Swal.fire('Error', 'Network Error or Script not deployed correctly.', 'error');
+            console.log(err);
+            btn.disabled = false;
+        });
+    }
+</script>
+
+</body>
+</html>
