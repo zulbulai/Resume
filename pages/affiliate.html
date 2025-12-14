@@ -1,196 +1,517 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="hi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>⚡ Multi-Button Poster</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Deal Manager Pro</title>
+    
+    <!-- Tailwind CSS (Fast Styling) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 (Popups) -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
-        :root { --primary: #4F46E5; --bg: #F3F4F6; --card-bg: #ffffff; --text: #1F2937; --border: #E5E7EB; --wa: #25D366; --tg: #229ED9; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); padding: 20px; display: flex; justify-content: center; }
-        .main-container { max-width: 500px; width: 100%; background: var(--card-bg); padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+        body { font-family: 'Poppins', sans-serif; background-color: #f3f4f6; -webkit-tap-highlight-color: transparent; }
         
-        h2 { text-align: center; margin-top: 0; color: #111827; }
-        .input-group { margin-bottom: 15px; }
-        label { display: block; font-size: 13px; font-weight: 600; color: #4B5563; margin-bottom: 6px; }
-        input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
-        
-        /* Multi Button Styles */
-        .btn-container { border: 1px dashed var(--border); padding: 15px; border-radius: 10px; background: #f9fafb; }
-        .btn-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-        .btn-row input { flex: 1; font-size: 13px; }
-        .remove-btn { color: #EF4444; background: none; border: none; cursor: pointer; font-size: 16px; }
-        
-        .add-btn { background: #EEF2FF; color: var(--primary); border: 1px dashed var(--primary); width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; }
-        .add-btn:hover { background: #E0E7FF; }
+        /* Custom Scrollbar Hide */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* Action Buttons */
-        .action-buttons { display: flex; gap: 10px; margin-top: 20px; }
-        .btn { flex: 1; padding: 14px; border: none; border-radius: 10px; color: white; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .btn-wa { background: var(--wa); }
-        .btn-tg { background: var(--tg); }
-        
-        #imgPreview { width: 100%; height: 200px; object-fit: contain; margin-top: 10px; border-radius: 8px; background: #fff; display: none; border: 1px solid #eee; }
+        /* Mobile App Container */
+        .app-container {
+            max-width: 480px; /* Mobile width limit */
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.05);
+            padding-bottom: 80px; /* Space for bottom nav */
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 480px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+            z-index: 50;
+            box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 10px;
+            color: #9ca3af;
+            transition: 0.2s;
+            background: none;
+            border: none;
+            cursor: pointer;
+        }
+
+        .nav-item i { font-size: 20px; margin-bottom: 4px; }
+        .nav-item.active { color: #4f46e5; font-weight: 600; }
+
+        /* Views Animation */
+        .view { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .view.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Inputs */
+        .input-field {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
+            background: #f9fafb;
+            font-size: 14px;
+            outline: none;
+            transition: 0.2s;
+        }
+        .input-field:focus { border-color: #4f46e5; background: white; box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1); }
+
+        /* Loader */
+        .loader-overlay {
+            position: fixed; inset: 0; background: rgba(255,255,255,0.9);
+            z-index: 100; display: none; justify-content: center; align-items: center;
+            flex-direction: column;
+        }
+        .spinner {
+            width: 40px; height: 40px; border: 4px solid #e5e7eb;
+            border-top: 4px solid #4f46e5; border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Product Card */
+        .prod-card {
+            background: white; border-radius: 16px; border: 1px solid #f3f4f6;
+            overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02);
+            transition: transform 0.1s;
+        }
+        .prod-card:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
 
-<div class="main-container">
-    <h2>🚀 Deal Poster Pro</h2>
-
-    <div class="input-group">
-        <label>Telegram Channel (@username)</label>
-        <input type="text" id="channelId" placeholder="@MySmartDispense" value="@MySmartDispense">
-    </div>
-
-    <div class="input-group">
-        <label>Product Image URL</label>
-        <input type="text" id="imgUrl" placeholder="Paste Image Link" oninput="showPreview()">
-        <img id="imgPreview">
-    </div>
-
-    <div class="input-group">
-        <label>Product Title</label>
-        <input type="text" id="title" placeholder="e.g. Samsung Galaxy M14">
-    </div>
-
-    <div style="display: flex; gap:10px;">
-        <div class="input-group" style="flex:1">
-            <label>Offer Price (₹)</label>
-            <input type="number" id="price" placeholder="299">
+<div class="app-container">
+    
+    <!-- HEADER -->
+    <header class="sticky top-0 bg-white/90 backdrop-blur-md z-40 px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+                Deal Manager
+            </h1>
+            <p class="text-xs text-gray-400">Pro Edition</p>
         </div>
-        <div class="input-group" style="flex:1">
-            <label>MRP (₹)</label>
-            <input type="number" id="mrp" placeholder="999">
+        <div class="h-8 w-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+            <i class="fa-solid fa-user"></i>
+        </div>
+    </header>
+
+    <!-- LOADER -->
+    <div id="loader" class="loader-overlay">
+        <div class="spinner mb-3"></div>
+        <p class="text-sm text-gray-500 font-medium">Processing...</p>
+    </div>
+
+    <!-- VIEW 1: ADD PRODUCT -->
+    <div id="view-add" class="view active px-5 py-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Add New Product</h2>
+        
+        <div class="space-y-4">
+            <div>
+                <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Category</label>
+                <select id="inpCat" class="input-field mt-1">
+                    <option value="Electronics">Electronics</option>
+                    <option value="Fashion">Fashion</option>
+                    <option value="Home">Home & Kitchen</option>
+                    <option value="Beauty">Beauty</option>
+                    <option value="Gadgets">Gadgets</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Product Title</label>
+                <input type="text" id="inpTitle" class="input-field mt-1" placeholder="e.g. Samsung Galaxy M14">
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Image URL</label>
+                <div class="flex gap-2">
+                    <input type="text" id="inpImg" class="input-field mt-1" placeholder="Paste Link..." oninput="previewImg(this.value)">
+                    <img id="addPreview" class="w-12 h-12 rounded-lg object-cover border mt-1 hidden bg-white">
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Price (₹)</label>
+                    <input type="number" id="inpPrice" class="input-field mt-1" placeholder="299">
+                </div>
+                <div>
+                    <label class="text-xs font-semibold text-gray-500 uppercase ml-1">MRP (₹)</label>
+                    <input type="number" id="inpMrp" class="input-field mt-1" placeholder="999">
+                </div>
+            </div>
+
+            <div>
+                <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Description</label>
+                <textarea id="inpDesc" class="input-field mt-1" rows="2" placeholder="Short description..."></textarea>
+            </div>
+
+            <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
+                <label class="text-xs font-bold text-gray-400 uppercase mb-2 block">Affiliate Links</label>
+                <div class="space-y-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-yellow-400 flex items-center justify-center text-white text-sm"><i class="fa-brands fa-amazon"></i></div>
+                        <input type="text" id="linkAmz" class="input-field p-2 text-sm" placeholder="Amazon Link">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-blue-500 flex items-center justify-center text-white text-sm">F</div>
+                        <input type="text" id="linkFlp" class="input-field p-2 text-sm" placeholder="Flipkart Link">
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded bg-pink-500 flex items-center justify-center text-white text-sm">M</div>
+                        <input type="text" id="linkMee" class="input-field p-2 text-sm" placeholder="Meesho Link">
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="saveProduct()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-indigo-200 active:scale-95 transition-all">
+                Save to Database
+            </button>
+            <div class="h-8"></div> <!-- Spacer -->
         </div>
     </div>
 
-    <div class="input-group">
-        <label>Buy Buttons <span style="font-weight:400; color:#888;">(Add as many as you want)</span></label>
-        <div class="btn-container" id="buttonList">
-            <div class="btn-row">
-                <input type="text" class="btn-name" placeholder="Name (e.g. Amazon)" value="Buy Now">
-                <input type="text" class="btn-link" placeholder="Affiliate Link">
+    <!-- VIEW 2: LIBRARY (SEARCH) -->
+    <div id="view-lib" class="view px-5 py-4">
+        <div class="sticky top-0 bg-white z-10 pb-2">
+            <h2 class="text-lg font-semibold text-gray-800 mb-3">Product Library</h2>
+            <div class="flex gap-2 mb-3">
+                <input type="text" id="searchQuery" class="input-field" placeholder="Search products..." onkeyup="debounceSearch()">
+                <button onclick="searchDB()" class="bg-indigo-600 text-white w-12 rounded-xl flex items-center justify-center shadow-md active:bg-indigo-800">
+                    <i class="fa-solid fa-search"></i>
+                </button>
+            </div>
+            <select id="searchCat" class="input-field text-sm py-2" onchange="searchDB()">
+                <option value="All">All Categories</option>
+            </select>
+        </div>
+
+        <div id="resultsArea" class="grid grid-cols-2 gap-4 mt-2 pb-5">
+            <!-- Items will appear here -->
+            <div class="col-span-2 text-center py-10 text-gray-400">
+                <i class="fa-solid fa-box-open text-4xl mb-2 opacity-50"></i>
+                <p class="text-sm">Type to search products</p>
             </div>
         </div>
-        <button class="add-btn" onclick="addNewButton()">+ Add Another Button</button>
     </div>
 
-    <div class="action-buttons">
-        <button class="btn btn-wa" onclick="postToWhatsApp()"><i class="fa-brands fa-whatsapp"></i> WhatsApp</button>
-        <button class="btn btn-tg" id="tgBtn" onclick="postToTelegram()">
-            <span id="tgText"><i class="fa-regular fa-paper-plane"></i> Send to Telegram</span>
+    <!-- VIEW 3: WHATSAPP -->
+    <div id="view-wa" class="view px-5 py-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">WhatsApp Publisher</h2>
+        
+        <div id="wa-empty" class="text-center py-10 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+            <i class="fa-regular fa-image text-4xl text-gray-300 mb-2"></i>
+            <p class="text-sm text-gray-400">Select a product from Library first</p>
+        </div>
+
+        <div id="wa-content" class="hidden animate__animated animate__fadeIn">
+            <div class="bg-white p-3 rounded-2xl border border-gray-100 shadow-sm mb-4">
+                <img id="waImg" class="w-full h-48 object-contain rounded-lg bg-white">
+            </div>
+
+            <label class="text-xs font-semibold text-gray-500 uppercase ml-1 mb-1 block">Message Text</label>
+            <textarea id="waText" class="w-full h-40 bg-green-50 text-gray-800 text-sm p-3 rounded-xl border border-green-200 font-mono focus:outline-none" readonly></textarea>
+
+            <div class="grid grid-cols-2 gap-3 mt-4">
+                <button onclick="copyWa()" class="bg-gray-800 text-white py-3 rounded-xl font-medium shadow-lg shadow-gray-200 active:scale-95 transition-all">
+                    <i class="fa-regular fa-copy mr-1"></i> Copy
+                </button>
+                <button onclick="sendWa()" class="bg-[#25D366] text-white py-3 rounded-xl font-medium shadow-lg shadow-green-200 active:scale-95 transition-all">
+                    <i class="fa-brands fa-whatsapp mr-1"></i> Send
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 4: TELEGRAM -->
+    <div id="view-tg" class="view px-5 py-4">
+        <h2 class="text-lg font-semibold text-gray-800 mb-4">Telegram Post</h2>
+
+        <div class="mb-4">
+            <label class="text-xs font-semibold text-gray-500 uppercase ml-1">Channel Username</label>
+            <input type="text" id="tgChannel" class="input-field mt-1" placeholder="@MyChannelName" onchange="localStorage.setItem('tgCh', this.value)">
+        </div>
+
+        <div class="bg-[#f0f9ff] border border-blue-100 rounded-2xl p-4 mb-5 relative overflow-hidden">
+            <div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] px-2 py-1 rounded-bl-lg font-bold">PREVIEW</div>
+            
+            <div class="flex gap-3 items-start">
+                <img id="tgImg" class="w-16 h-16 rounded-lg bg-white object-cover border border-blue-100">
+                <div>
+                    <h4 id="tgTitle" class="text-sm font-bold text-gray-800 line-clamp-2">No Product Selected</h4>
+                    <p id="tgPrice" class="text-green-600 font-bold text-sm mt-1">₹0</p>
+                </div>
+            </div>
+            
+            <div id="tgBtns" class="flex flex-wrap gap-2 mt-3">
+                <div class="h-8 bg-gray-200 rounded-lg w-24 animate-pulse"></div>
+                <div class="h-8 bg-gray-200 rounded-lg w-24 animate-pulse"></div>
+            </div>
+        </div>
+
+        <button onclick="postTelegram()" id="btnTg" class="w-full bg-[#229ED9] hover:bg-[#1e8bc0] text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-blue-200 active:scale-95 transition-all flex justify-center items-center gap-2">
+            <i class="fa-regular fa-paper-plane"></i> Post to Channel
         </button>
     </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <div class="bottom-nav">
+        <button class="nav-item active" onclick="switchTab('add')">
+            <i class="fa-solid fa-plus-circle"></i>
+            <span>Add</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('lib')">
+            <i class="fa-solid fa-layer-group"></i>
+            <span>Library</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('wa')">
+            <i class="fa-brands fa-whatsapp"></i>
+            <span>WhatsApp</span>
+        </button>
+        <button class="nav-item" onclick="switchTab('tg')">
+            <i class="fa-brands fa-telegram"></i>
+            <span>Telegram</span>
+        </button>
+    </div>
+
 </div>
 
+<!-- JAVASCRIPT LOGIC -->
 <script>
-    // ✅ Updated with YOUR NEW URL
-    const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbziqREWOtFN84fRXVtwwdvVb7Mm7Ci6Ls5gxP9zu3igrLlDdT8LAAqZZHPKhP6Uxxlt9w/exec";
+    // 🔥 YOUR PROVIDED SCRIPT URL
+    const API_URL = "https://script.google.com/macros/s/AKfycbzqCOmdk5gcTBhroy_gWGNj6wwvZDvYefSO4Y-BNLom1jz5JRQf3ee0nX9QYfJ6VF9bUA/exec";
+    
+    let currentProduct = null;
+    let searchTimeout = null;
 
-    // 1. Image Preview
-    function showPreview() {
-        const url = document.getElementById('imgUrl').value;
-        const img = document.getElementById('imgPreview');
-        if(url) { img.src = url; img.style.display = 'block'; }
-    }
+    // --- INITIALIZATION ---
+    window.onload = () => {
+        if(localStorage.getItem("tgCh")) document.getElementById("tgChannel").value = localStorage.getItem("tgCh");
+        loadCategories();
+    };
 
-    // 2. Add New Button Logic
-    function addNewButton() {
-        const container = document.getElementById('buttonList');
-        const div = document.createElement('div');
-        div.className = 'btn-row';
-        div.innerHTML = `
-            <input type="text" class="btn-name" placeholder="Name (e.g. Flipkart)">
-            <input type="text" class="btn-link" placeholder="Link">
-            <button class="remove-btn" onclick="this.parentElement.remove()"><i class="fa-solid fa-trash"></i></button>
-        `;
-        container.appendChild(div);
-    }
-
-    // 3. Generate Caption
-    function getCaption() {
-        const title = document.getElementById('title').value;
-        const price = document.getElementById('price').value;
-        const mrp = document.getElementById('mrp').value;
-        let discount = "";
-        if(mrp && price && Number(mrp) > Number(price)) {
-            discount = `(${Math.round(((mrp - price)/mrp)*100)}% OFF)`;
-        }
-        return `<b>🔥 Today's Best Deal</b>\n\n<b>${title}</b>\n\n💰 <b>Price: ₹${price}</b> ${discount}\n❌ <strike>MRP: ₹${mrp}</strike>\n\n<i>Limited Time Offer! ⏳</i>`;
-    }
-
-    // 4. Post to WhatsApp (Takes first link)
-    function postToWhatsApp() {
-        const title = document.getElementById('title').value;
-        const price = document.getElementById('price').value;
-        const firstLink = document.querySelector('.btn-link').value; 
+    // --- NAVIGATION ---
+    function switchTab(id) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.getElementById('view-' + id).classList.add('active');
         
-        if(!firstLink) { Swal.fire('Error', 'Please add at least one link', 'error'); return; }
-        
-        const text = `🔥 *Loot Deal!* 🔥\n\n*${title}*\n💰 ₹${price}\n\n👉 *Buy Now:* ${firstLink}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+        event.currentTarget.classList.add('active');
     }
 
-    // 5. Post to Telegram (Multi Button)
-    function postToTelegram() {
-        const btn = document.getElementById('tgBtn');
-        const channelId = document.getElementById('channelId').value;
-        const imgUrl = document.getElementById('imgUrl').value;
-        const title = document.getElementById('title').value;
-        
-        // Collect all buttons
-        let buttons = [];
-        document.querySelectorAll('.btn-row').forEach(row => {
-            let name = row.querySelector('.btn-name').value;
-            let link = row.querySelector('.btn-link').value;
-            if(name && link) buttons.push({ text: name, url: link });
-        });
+    // --- UTILS ---
+    function loader(show) {
+        document.getElementById('loader').style.display = show ? 'flex' : 'none';
+    }
 
-        if(!channelId || !imgUrl || buttons.length === 0) {
-            Swal.fire('Missing Info', 'Check Channel ID, Image and at least 1 Link.', 'warning');
-            return;
-        }
+    function previewImg(url) {
+        const img = document.getElementById('addPreview');
+        if(url) { img.src = url; img.classList.remove('hidden'); }
+        else { img.classList.add('hidden'); }
+    }
 
-        btn.disabled = true;
-        btn.innerHTML = "Sending...";
+    // --- 1. SAVE PRODUCT ---
+    function saveProduct() {
+        const data = {
+            action: 'save_product',
+            category: document.getElementById('inpCat').value,
+            title: document.getElementById('inpTitle').value,
+            imageUrl: document.getElementById('inpImg').value,
+            price: document.getElementById('inpPrice').value,
+            mrp: document.getElementById('inpMrp').value,
+            description: document.getElementById('inpDesc').value,
+            amazon: document.getElementById('linkAmz').value,
+            flipkart: document.getElementById('linkFlp').value,
+            meesho: document.getElementById('linkMee').value
+        };
 
-        fetch(GOOGLE_SCRIPT_URL, {
-            method: 'POST',
-            body: JSON.stringify({
-                channelId: channelId,
-                imageUrl: imgUrl,
-                caption: getCaption(),
-                buttons: buttons // Sending Array of buttons
-            })
+        if(!data.title || !data.imageUrl) return Swal.fire('Oops', 'Title & Image are required', 'warning');
+
+        loader(true);
+        fetch(API_URL, { method: 'POST', body: JSON.stringify(data) })
+        .then(r => r.json())
+        .then(res => {
+            loader(false);
+            if(res.status === 'success') {
+                Swal.fire({icon:'success', title:'Saved!', showConfirmButton:false, timer:1500});
+                document.getElementById('inpTitle').value = '';
+                document.getElementById('inpImg').value = '';
+                document.getElementById('addPreview').classList.add('hidden');
+            } else Swal.fire('Error', res.data, 'error');
         })
-        .then(res => res.json())
-        .then(data => {
-            if(data.status === 'success') {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Success!',
-                    text: 'Posted with Multiple Buttons!',
-                    timer: 2000,
-                    showConfirmButton: false
-                });
-            } else {
-                Swal.fire('Failed', data.message, 'error');
+        .catch(() => { loader(false); Swal.fire('Error', 'Network Error', 'error'); });
+    }
+
+    // --- 2. SEARCH ---
+    function loadCategories() {
+        fetch(API_URL, { method: 'POST', body: JSON.stringify({action: 'get_categories'}) })
+        .then(r => r.json())
+        .then(res => {
+            if(res.status === 'success') {
+                const sel = document.getElementById('searchCat');
+                sel.innerHTML = '<option value="All">All Categories</option>';
+                res.data.forEach(c => sel.innerHTML += `<option value="${c}">${c}</option>`);
             }
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-regular fa-paper-plane"></i> Send to Telegram`;
-        })
-        .catch(err => {
-            Swal.fire('Error', 'Network Error or Script not deployed correctly.', 'error');
-            console.log(err);
-            btn.disabled = false;
         });
     }
+
+    function debounceSearch() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(searchDB, 500);
+    }
+
+    function searchDB() {
+        const query = document.getElementById('searchQuery').value;
+        const cat = document.getElementById('searchCat').value;
+        const area = document.getElementById('resultsArea');
+        
+        area.innerHTML = '<div class="col-span-2 text-center py-5"><div class="spinner mx-auto mb-2"></div><span class="text-xs text-gray-400">Searching...</span></div>';
+
+        fetch(API_URL, { method: 'POST', body: JSON.stringify({action:'search_product', query:query, category:cat}) })
+        .then(r => r.json())
+        .then(res => {
+            area.innerHTML = '';
+            if(!res.data || res.data.length === 0) {
+                area.innerHTML = '<div class="col-span-2 text-center py-5 text-gray-400">No products found</div>';
+                return;
+            }
+            res.data.forEach(prod => {
+                let off = "";
+                if(prod.mrp && prod.price) off = Math.round(((prod.mrp-prod.price)/prod.mrp)*100) + "% OFF";
+
+                const card = document.createElement('div');
+                card.className = 'prod-card';
+                card.onclick = () => loadContext(prod);
+                card.innerHTML = `
+                    <div class="relative h-32 bg-white p-2 border-b border-gray-100">
+                        ${off ? `<span class="absolute top-2 right-2 bg-red-100 text-red-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${off}</span>` : ''}
+                        <img src="${prod.imageUrl}" class="w-full h-full object-contain">
+                    </div>
+                    <div class="p-3">
+                        <h4 class="text-xs font-bold text-gray-800 line-clamp-1 mb-1">${prod.title}</h4>
+                        <div class="flex items-center gap-1">
+                            <span class="text-sm font-bold text-green-600">₹${prod.price}</span>
+                            <span class="text-[10px] text-gray-400 line-through">₹${prod.mrp}</span>
+                        </div>
+                    </div>
+                `;
+                area.appendChild(card);
+            });
+        });
+    }
+
+    // --- 3. LOAD PRODUCT TO CONTEXT ---
+    function loadContext(prod) {
+        currentProduct = prod;
+
+        // Populate WhatsApp
+        document.getElementById('wa-empty').classList.add('hidden');
+        document.getElementById('wa-content').classList.remove('hidden');
+        document.getElementById('waImg').src = prod.imageUrl;
+        
+        let links = "";
+        if(prod.amazon) links += `👉 Amazon: ${prod.amazon}\n`;
+        if(prod.flipkart) links += `👉 Flipkart: ${prod.flipkart}\n`;
+        if(prod.meesho) links += `👉 Meesho: ${prod.meesho}\n`;
+
+        let discount = "";
+        if(prod.mrp && prod.price) discount = `(${Math.round(((prod.mrp-prod.price)/prod.mrp)*100)}% OFF)`;
+        
+        const txt = `🔥 *${prod.title}*\n\n💰 *Offer Price: ₹${prod.price}* ${discount}\n❌ MRP: ₹${prod.mrp}\n\n${prod.description||''}\n\n${links}\n✅ *Grab Fast!*`;
+        document.getElementById('waText').value = txt;
+
+        // Populate Telegram Preview
+        document.getElementById('tgImg').src = prod.imageUrl;
+        document.getElementById('tgTitle').innerText = prod.title;
+        document.getElementById('tgPrice').innerText = `₹${prod.price} ${discount}`;
+        const tgBtns = document.getElementById('tgBtns');
+        tgBtns.innerHTML = '';
+        if(prod.amazon) tgBtns.innerHTML += `<span class="px-2 py-1 bg-yellow-400 text-white text-[10px] rounded font-bold">Amazon</span>`;
+        if(prod.flipkart) tgBtns.innerHTML += `<span class="px-2 py-1 bg-blue-500 text-white text-[10px] rounded font-bold">Flipkart</span>`;
+        
+        Swal.fire({
+            toast: true, position: 'top', icon: 'success', 
+            title: 'Product Loaded!', showConfirmButton: false, timer: 1000
+        });
+    }
+
+    // --- 4. WHATSAPP ACTIONS ---
+    function copyWa() {
+        const el = document.getElementById('waText');
+        el.select(); document.execCommand('copy');
+        Swal.fire({toast:true, position:'top', icon:'success', title:'Copied!', showConfirmButton:false, timer:1000});
+    }
+    function sendWa() {
+        const txt = document.getElementById('waText').value;
+        window.open(`https://wa.me/?text=${encodeURIComponent(txt)}`, '_blank');
+    }
+
+    // --- 5. TELEGRAM POST ---
+    function postTelegram() {
+        if(!currentProduct) return Swal.fire('Oops', 'Select a product first', 'warning');
+        const ch = document.getElementById('tgChannel').value;
+        if(!ch) return Swal.fire('Oops', 'Enter Channel Username', 'warning');
+
+        const btn = document.getElementById('btnTg');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin animate-spin"></i> Sending...';
+        btn.disabled = true;
+
+        let discount = "";
+        if(currentProduct.mrp && currentProduct.price) discount = `(${Math.round(((currentProduct.mrp-currentProduct.price)/currentProduct.mrp)*100)}% OFF)`;
+        
+        const caption = `<b>🔥 Today's Best Deal</b>\n\n<b>${currentProduct.title}</b>\n\n💰 <b>Price: ₹${currentProduct.price}</b> ${discount}\n❌ <strike>MRP: ₹${currentProduct.mrp}</strike>\n\n<i>${currentProduct.description||''}</i>`;
+
+        const payload = {
+            action: 'send_telegram',
+            channelId: ch,
+            imageUrl: currentProduct.imageUrl,
+            caption: caption,
+            amazon: currentProduct.amazon,
+            flipkart: currentProduct.flipkart,
+            meesho: currentProduct.meesho
+        };
+
+        fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) })
+        .then(r => r.json())
+        .then(res => {
+            btn.innerHTML = originalText; btn.disabled = false;
+            if(res.status === 'success') Swal.fire('Success', 'Posted to Telegram', 'success');
+            else Swal.fire('Error', res.data, 'error');
+        })
+        .catch(() => { btn.innerHTML = originalText; btn.disabled = false; Swal.fire('Error', 'Network', 'error'); });
+    }
+
 </script>
 
 </body>
 </html>
+
+
